@@ -4,42 +4,47 @@
 
 (define-language PCF-list 
   ;; Types
-  (t ::= num
-         bool
-         (→ t t)
-         (list t ...))
+  (t num
+     bool
+     (→ t t))
   ;; Terms
-  (e ::= (e e)
-         (λ (x t) e)
-         x
-         v
-         (list e ...)
-         number
-         (+ e ...)
-         (if0 e e e)
-         (fix e)
-         ;(err t string)
-         )
+  (e (e e)
+     (λ (x t) e)
+     x
+     v
+     ;(list e ...) ;;;;;; bad idea for now
+     (cons e e)
+     (fst e)
+     (rst e)
+     (empty? e)
+     (cons? e)
+     number
+     (+ e ...)
+     (if0 e e e)
+     (fix e)
+     ;(err t string)
+     )
   ;; Values
-  (v ::= n
-         tt
-         ff
-         (λ (x t) ... e)
-         (list v ...))
+  (v n
+     tt
+     ff
+     (λ (x t) ... e)
+     (fix v)
+     (list v ...))
   ;; Numbers
-  (n ::= number)
+  (n number)
   ;; Operations
-  (o ::= cons
-         fst
-         lst
-         +
-         ;;;;;;;;;;;;;;;;;;;;;;;;;;should be able to compute length of a list
-         )
+  (o cons
+     fst
+     lst
+     +
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;should be able to compute length of a list
+     )
   ;; Variables
-  (x ::= variable-not-otherwise-mentioned)
+  (x variable-not-otherwise-mentioned)
   ;; Type environment
-  (Γ ::= ·
-         (x : t Γ)))
+  (Γ ·
+     (x : t Γ)))
 
 (define-judgment-form PCF-list
   #:mode (types I I O)
@@ -55,12 +60,16 @@
   [---------------------;;;;;;;;;;;;;;;;;;variable
    (types (x : t Γ) x t)]
   [(types Γ x_1 t_1)
-   (side-condition (different x_1 x_2))
+;  (side-condition (different x_1 x_2))
    ------------------------------------
    (types (x_2 : t_2 Γ) x_1 t_1)]
    [(types Γ e t) ...
    --------------------------;;;;;;;;;;;;;;;;;;;can I just do list(t)?
    (types Γ (list e ...) (list t ...))]
+;  [(types Γ e_1 t)
+;   (types Γ e_2 t) ...
+;   -------------------------------------
+;   (types Γ (list e_1 e_2 ...) (list t))] 
 ;  [(types Γ e_1 t_1)
 ;   (types Γ e_2 t_2) ...
 ;   --------------------------;;;;;;;;;;;;;;;;;;;list(t_1 t_2 ...)?
@@ -91,9 +100,52 @@
 )
   
 (define-extended-language PCF-list-name PCF-list
-  (E-name ::=
-          hole
-          (E-name e)))
+  (p (e ...))
+  (P (e ... E e ...))
+  (E-name hole
+        (v E)
+        (E e)
+        (+ v ... E e ...)
+        (if0 E e e)
+        (fix E)))
+
+(define-metafunction PCF-list-name
+  Σ : number ... -> number
+  [(Σ number ...)
+   ,(apply + (term (number ...)))])
+
+(require redex/tut-subst)
+(define-metafunction PCF-list-name
+  subst : x v e -> e
+  [(subst x v e)
+   ,(subst/proc x? (list (term x)) (list (term v)) (term e))])
+(define x? (redex-match PCF-list-name x))
+
+
+(define ->name
+  (reduction-relation
+   PCF-list-name
+   #:domain p
+   (--> (in-hole P (if0 0 e_1 e_2))
+        (in-hole P e_1)
+        "if0t")
+   (--> (in-hole P (if0 v e_1 e_2))
+        (in-hole P e_2)
+        (side-condition (not (equal? 0 (term v))))
+        "if0f")
+   (--> (in-hole P ((fix (λ (x t) e)) v))
+        (in-hole P (((λ (x t) e) (fix (λ (x t) e))) v))
+        "fix")
+   (--> (in-hole P ((λ (x t) e) v))
+        (in-hole P (subst x v e))
+        "βv")
+   (--> (in-hole P (+ number ...))
+        (in-hole P (Σ number ...))
+        "+")
+   (--> (e_1 ... (in-hole E (amb e_2 ...)) e_3 ...)
+        (e_1 ... (in-hole E e_2) ... e_3 ...)
+        "amb")))
+
 
 (define ->name
   (reduction-relation
@@ -108,7 +160,7 @@
    (--> (in-hole E-name (if ff e_1 e_2))
         (in-hole E-name e_2)
         if-ff-name)
-   (--> (in-hole E-name (n_1 + n_2))
+   (--> (in-hole E-name (+ n_1 n_2))
         (in-hole E-name ,(+ (term n_1) (term n_2)))
         plus-name)))
 
