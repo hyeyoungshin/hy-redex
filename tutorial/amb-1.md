@@ -1,3 +1,7 @@
+### 1 Amb: A Redex Tutorial
+
+## 1.1 Defining a language
+
 ```racket
 #lang racket
 (require redex)
@@ -101,4 +105,92 @@ Use this facility to write a pattern that matches odd length lists of expression
 (list
  (match (list (bind 'e_left 1) (bind 'e_right 5)))
  (match (list (bind 'e_left 2) (bind 'e_right 4))))
+```
+## 1.2 Typing
+
+```racket
+(define-extended-language L+Γ L
+  [Γ · (x : t Γ)])
+```
+
+```racket
+(define-judgment-form
+  L+Γ
+  #:mode (types I I O)
+  #:contract (types Γ e t)
+
+  [(types Γ e_1 (→ t_2 t_3))
+   (types Γ e_2 t_2)
+   -------------------------
+   (types Γ (e_1 e_2) t_3)]
+
+  [(types (x : t_1 Γ) e t_2)
+   -----------------------------------
+   (types Γ (λ (x t_1) e) (→ t_1 t_2))]
+
+  [(types Γ e (→ (→ t_1 t_2) (→ t_1 t_2)))
+   ---------------------------------------
+   (types Γ (fix e) (→ t_1 t_2))]
+
+  [---------------------
+   (types (x : t Γ) x t)]
+
+  [(types Γ x_1 t_1)
+   (side-condition (different x_1 x_2))
+   ------------------------------------
+   (types (x_2 : t_2 Γ) x_1 t_1)]
+
+  [(types Γ e num) ...
+   -----------------------
+   (types Γ (+ e ...) num)]
+
+  [--------------------
+   (types Γ number num)]
+
+  [(types Γ e_1 num)
+   (types Γ e_2 t)
+   (types Γ e_3 t)
+   -----------------------------
+   (types Γ (if0 e_1 e_2 e_3) t)]
+
+  [(types Γ e num) ...
+   --------------------------
+   (types Γ (amb e ...) num)])
+   ```
+
+## 1.3 Testing Typing
+
+```racket
+> (judgment-holds
+   (types ·
+          ((λ (x num) (amb x 1))
+           (+ 1 2))
+          t)
+   t)
+'(num)
+```
+
+```racket
+> (judgment-holds
+   (types ·
+          (λ (f (→ num (→ num num))) (f (amb 1 2)))
+          (→ t_1 t_2))
+   t_2)
+'((→ num num))
+```
+
+**Exercise 5**
+
+Remove the *different* side-condition and demonstrate how one expression now has multiple types, using judgment-holds. That is, find a use of *judgment-holds* that returns a list of length two, with two different types in it.
+
+*Answer*
+
+```racket
+Exercise 5
+> (judgment-holds
+   (types (x : bool (x : num ·))
+          x
+          t)
+   t)
+'(bool num)
 ```
