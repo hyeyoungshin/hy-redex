@@ -9,27 +9,27 @@
      (→ T T)
      (List T))
   ;; Terms
-  (t (t t)
-     (λ (x T) ... t)
+  (e (e e)
+     (λ (x : T) ... e)
      x
      v
-     nil (T)
-     (cons (T) t t)
-     (fst (T) t)
-     (rst (T) t)
-     (nil? t)
-     (cons? t)
+     (nil (T))
+     (cons (T) e e)
+     (fst (T) e)
+     (rst (T) e)
+     (nil? e)
+     (cons? e)
      (+ n ...)
-     (if0 t t t)
+     (if0 e e e)
      ;(def t t)
-     (fix t)
+     (fix e)
      ;(err t string)
      )
   ;; Values
   (v n
      tt
      ff
-     (λ (x T) ... t)
+     (λ (x : T) ... e)
      (fix v)
      nil (T)
      (cons (T) v ...))
@@ -50,16 +50,16 @@
 
 (define-judgment-form PCF-list
   #:mode (types I I O)
-  #:contract (types Γ t T)
+  #:contract (types Γ e T)
   
-  [(types Γ t_1 (→ T_2 T_3))
-   (types Γ t_2 T_2)
+  [(types Γ e_1 (→ T_2 T_3))
+   (types Γ e_2 T_2)
    ------------------------- ;;T-APP
-   (types Γ (t_1 t_2) T_3)]
+   (types Γ (e_1 e_2) T_3)]
 
-  [(types (x : T_1 Γ) t T_2)
+  [(types (x : T_1 Γ) e T_2)
    ----------------------------------- ;;T-ABS
-   (types Γ (λ (x T_1) t) (→ T_1 T_2))]
+   (types Γ (λ (x T_1) e) (→ T_1 T_2))]
 
   [
    ---------------------;;T-VAR
@@ -71,29 +71,30 @@
    (types (x_2 : T_2 Γ) x_1 T_1)]
 
   [
-   ---------------------------- ;;T-NIL
-   (types Γ nil (T_1) list T_1)]
+   -------------------------------- ;;T-NIL
+   (types Γ (nil (T_1)) (List T_1))]
 
-  [(types Γ t_1 T_1)
-   (types Γ t_2 list T_1)
+  [(types Γ e_1 T_1)
+   (types Γ e_2 (List T_1))
    --------------------------------------- ;;T-CONS
-   (types Γ (cons (T_1) t_1 t_2) list T_1)]
+   (types Γ (cons (T_1) e_1 e_2) (List T_1))]
 
-  [(types Γ t_1 List T_1)
+  [
    ------------------------------- ;; T-NIL?
-   (types Γ nil? (T_1) t_1 Bool)]
+   (types Γ (nil? (T_1)) Bool)]
 
-  [(types Γ t_1 T_1)
+  [(types Γ e_1 T_1)
+   (types Γ e_2 (List T_1))
    ----------------- ;; T_CONS?
-   (types Γ cons (T_1) t_1 Bool)]
+   (types Γ (cons (T_1) e_1 e_2) Bool)]
 
-  [(types Γ t_1 List T_1)
+  [(types Γ e_1 (List T_1))
    --------------------------- ;; T-FST
-   (types Γ fst (T_1) t_1 T_1)]
+   (types Γ (fst (T_1) e_1) T_1)]
 
-  [(types Γ t_1 List T_1)
+  [(types Γ e_1 (List T_1))
    --------------------------- ;; T-FST
-   (types Γ rst (T_1) t_1 T_1)]
+   (types Γ (rst (T_1) e_1) T_1)]
  
   [
    -------------------- ;;T-NUM
@@ -103,15 +104,15 @@
    ------------------------ ;;T-ADD
    (types Γ (+ n_1 ...) Num)]
   
-  [(types Γ t_1 Num)
-   (types Γ t_2 T)
-   (types Γ t_3 T)
+  [(types Γ e_1 Num)
+   (types Γ e_2 T)
+   (types Γ e_3 T)
    ----------------------------- ;;T-IF0
-   (types Γ (if0 t_1 t_2 t_3) T)]
+   (types Γ (if0 e_1 e_2 e_3) T)]
   
-  [(types Γ t_1 (→ T_1 T_1))
+  [(types Γ e_1 (→ T_1 T_1))
    ------------------------ ;;T-FIX
-   (types Γ (fix t_1) T_1)]
+   (types Γ (fix e_1) T_1)]
   
   [
    ----------------- ;;T-TRUE
@@ -129,109 +130,160 @@
 ;   (types Γ (e e_0 ...) t)]
 )
   
-(define-extended-language PCF-list-name PCF-list
-  (p (t ...))
-  (P (t ... E t ...))
-  (E-name hole
-        (v E)
-        (E e)
-        (+ v ... E e ...)
-        (if0 E e e)
-        (fix E)))
+(define-extended-language NPCF PCF-list
+  (p (e ...))
+  (P (e ... E-Name e ...))
+  (E-Name hole
+          (E-Name e)
+          (+ v ... E-Name e ...)
+          (if0 E-Name e e)
+          (cons (T) v ... E-Name e ...)
+          (fst (T) E-Name)
+          (rst (T) E-Name)
+          (nil? E-Name)
+          (cons? E-Name)
+          (fix E-Name)))
+          
 
-(define-metafunction PCF-list-name
+(define-metafunction NPCF
   Σ : number ... -> number
   [(Σ number ...)
    ,(apply + (term (number ...)))])
 
 (require redex/tut-subst)
-(define-metafunction PCF-list-name
-  subst : x v e -> e
+(define-metafunction NPCF
+  subst : x v e -> t
   [(subst x v e)
    ,(subst/proc x? (list (term x)) (list (term v)) (term e))])
-(define x? (redex-match PCF-list-name x))
-
+(define x? (redex-match NPCF x))
 
 (define ->name
   (reduction-relation
-   PCF-list-name
+   NPCF
    #:domain p
    (--> (in-hole P (if0 0 e_1 e_2))
         (in-hole P e_1)
-        "if0t")
-   (--> (in-hole P (if0 v e_1 e_2))
+        "Nif0t")
+   (--> (in-hole P (if0 e e_1 e_2))
         (in-hole P e_2)
-        (side-condition (not (equal? 0 (term v))))
-        "if0f")
-   (--> (in-hole P ((fix (λ (x t) e)) v))
-        (in-hole P (((λ (x t) e) (fix (λ (x t) e))) v))
-        "fix")
-   (--> (in-hole P ((λ (x t) e) v))
-        (in-hole P (subst x v e))
-        "βv")
+        (side-condition (not (equal? 0 (term e))))
+        "Nif0f")
+   (--> (in-hole P (fst (T) (cons (T) e_1 e_2)))
+        (in-hole P e_1)
+        "Nfst-cons")
+   (--> (in-hole P (rst (T) (cons (T) e_1 e_2)))
+        (in-hole P e_2)
+        "Nrst-cons")
+   (--> (in-hole P (fst (T) (nil (T))))
+        (in-hole P (nil (T)))
+        "Nfst-nil")
+   (--> (in-hole P (rst (T) (nil (T))))
+        (in-hole P (nil (T)))
+        "Nrst-nil")
+   (--> (in-hole P (cons? (cons (T) e_1 e_2)))
+        (in-hole P tt)
+        "Ncons?-cons")
+   (--> (in-hole P (cons? (nil (T))))
+        (in-hole P ff)
+        "Ncons?-nil")
+   (--> (in-hole P ((fix (λ (x : T) e_1)) e_2))
+        (in-hole P (((λ (x : T) e_1) (fix (λ (x : T) e_1))) e_2))
+        "Nfix")
+   (--> (in-hole P (fix (λ (x: T) e_2)))
+        (in-hole P (subst x (fix (λ (x: T) e_2)) e_2))
+        "Nfix-beta")
+   (--> (in-hole P ((λ (x : T) e_1) e_2))
+        (in-hole P (subst x e_2 e_1))
+        "Nbeta")
    (--> (in-hole P (+ number ...))
         (in-hole P (Σ number ...))
-        "+")
-   (--> (e_1 ... (in-hole E (amb e_2 ...)) e_3 ...)
-        (e_1 ... (in-hole E e_2) ... e_3 ...)
-        "amb")))
-
-
-(define ->name
-  (reduction-relation
-   PCF-list-name
-   #:domain e
-   (--> (in-hole E-name ((lambda (x) e_1) e_2))
-        (in-hole E-name (substitute e_1 x e_2))
-        beta-name)
-   (--> (in-hole E-name (if tt e_1 e_2))
-        (in-hole E-name e_1)
-        if-tt-name)
-   (--> (in-hole E-name (if ff e_1 e_2))
-        (in-hole E-name e_2)
-        if-ff-name)
-   (--> (in-hole E-name (+ n_1 n_2))
-        (in-hole E-name ,(+ (term n_1) (term n_2)))
-        plus-name)))
-
+        "Nplus")))
+   
   
 
 
-(define-metafunction PCF-list-name
-  eval-name : e -> v
-  [(eval-name e) ,(first (apply-reduction-relation* ->name (term e)))])
+(define-metafunction NPCF
+  eval-name : t -> v
+  [(eval-name t) ,(first (apply-reduction-relation* ->name (term t)))])
 
 
 
+;(define-extended-language Ev L+Γ
+;  (p (e ...))
+;  (P (e ... E e ...))
+;  (E (v E)
+;     (E e)
+;     (+ v ... E e ...)
+;     (if0 E e e)
+;     (fix E)
+;     hole)
+;  (v (λ (x t) e)
+;     (fix v)
+;     number))
 
 
 
-(define-extended-language PCF-list-value PCF-list
-  (E-value ::=
-          hole
-          (E-value e)
-          ((lambda (x) e) E-value)))
-
+(define-extended-language VPCF PCF-list
+  (p (e ...))
+  (P (e ... E-Value e ...))
+  (E-Value hole
+           (v E-Value)
+           (E-Value e)
+           (+ v ... E-Value e ...)
+           (cons (T) v ... E-Value e ...)
+           (fst (T) E-Value)
+           (rst (T) E-Value)
+           (nil? E-Value)
+           (cons? E-Value))
+           (if0 E-Value e e)
+           (fix E-Value))
+ 
+  
 (define ->value
   (reduction-relation
-   PCF-list-value
+   VPCF
    #:domain e
-   (--> (in-hole E-value ((lambda (x) e) v))
-        (in-hole E-value (substitute e x v))
-        beta-value)
-   (--> (in-hole E-value (if tt e_1 e_2))
-        (in-hole E-value e_1)
-        if-tt-value)
-   (--> (in-hole E-value (if ff e_1 e_2))
-        (in-hole E-value e_2)
-        if-ff-value)
-   (--> (in-hole E-value (n_1 + n_2))
-        (in-hole E-value ,(+ (term n_1) (term n_2)))
-        plus-value)))
-  
+   (--> (in-hole P ((lambda (x) e) v))
+        (in-hole P (substitute e x v))
+        "Vbeta")
+   (--> (in-hole P (if0 0 e_1 e_2))
+        (in-hole P e_1)
+        "Vif0t")
+   (--> (in-hole P (if0 e e_1 e_2))
+        (in-hole P e_2)
+        (side-condition (not (equal? 0 (term e))))
+        "Vif0f")
+   (--> (in-hole P (fst (T) (cons (T) e_1 e_2)))
+        (in-hole P e_1)
+        "Vfst-cons")
+   (--> (in-hole P (rst (T) (cons (T) e_1 e_2)))
+        (in-hole P e_2)
+        "Vrst-cons")
+   (--> (in-hole P (fst (T) (nil (T))))
+        (in-hole P (nil (T)))
+        "Vfst-nil")
+   (--> (in-hole P (rst (T) (nil (T))))
+        (in-hole P (nil (T)))
+        "Vrst-nil")
+   (--> (in-hole P (cons? (cons (T) e_1 e_2)))
+        (in-hole P tt)
+        "Vcons?-cons")
+   (--> (in-hole P (cons? (nil (T))))
+        (in-hole P ff)
+        "Vcons?-nil")
+   (--> (in-hole P ((fix (λ (x : T) e_1)) e_2))
+        (in-hole P (((λ (x : T) e_1) (fix (λ (x : T) e_1))) e_2))
+        "Vfix")
+   (--> (in-hole P (fix (λ (x: T) e_2)))
+        (in-hole P (subst x (fix (λ (x: T) e_2)) e_2))
+        "Vfixbeta")
+   (--> (in-hole P (+ e_1 e_2))
+        (in-hole P ,(+ (term e_1) (term e_2)))
+        "VPlus")))
 
 
-(define-metafunction PCF-list-value
+
+(define-metafunction VPCF
   eval-value : e -> v
   [(eval-value e) ,(first (apply-reduction-relation* ->value (term e)))])
 
