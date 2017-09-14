@@ -4,93 +4,123 @@
 
 (define-language PCF-list 
   ;; Types
-  (t num
-     bool
-     (→ t t))
+  (T Num
+     Bool
+     (→ T T)
+     (List T))
   ;; Terms
-  (e (e e)
-     (λ (x t) e)
+  (t (t t)
+     (λ (x T) ... t)
      x
      v
-     ;(list e ...) ;;;;;; bad idea for now
-     (cons e e)
-     (fst e)
-     (rst e)
-     (empty? e)
-     (cons? e)
-     number
-     (+ e ...)
-     (if0 e e e)
-     (fix e)
+     nil (T)
+     (cons (T) t t)
+     (fst (T) t)
+     (rst (T) t)
+     (nil? t)
+     (cons? t)
+     (+ n ...)
+     (if0 t t t)
+     ;(def t t)
+     (fix t)
      ;(err t string)
      )
   ;; Values
   (v n
      tt
      ff
-     (λ (x t) ... e)
+     (λ (x T) ... t)
      (fix v)
-     (list v ...))
+     nil (T)
+     (cons (T) v ...))
   ;; Numbers
   (n number)
   ;; Operations
-  (o cons
-     fst
-     lst
-     +
-     ;;;;;;;;;;;;;;;;;;;;;;;;;;should be able to compute length of a list
-     )
+;;  (o cons
+;;     fst
+;;     lst
+;;     +
+;;     ;;;;;;;;;;;;;;;;;;;;;;;;;;should be able to compute length of a list
+;;     )
   ;; Variables
   (x variable-not-otherwise-mentioned)
   ;; Type environment
   (Γ ·
-     (x : t Γ)))
+     (x : T Γ)))
 
 (define-judgment-form PCF-list
   #:mode (types I I O)
-  #:contract (types Γ e t)
+  #:contract (types Γ t T)
   
-  [(types Γ e_1 (→ t_2 t_3))
-   (types Γ e_2 t_2)
-   ------------------------- ;;;;;;;;;;;;;application
-   (types Γ (e_1 e_2) t_3)]
-  [(types (x  t_1 Γ) e t_2)
-   ----------------------------------- ;;;abstraction
-   (types Γ (λ (x t_1) e) (→ t_1 t_2))]
-  [---------------------;;;;;;;;;;;;;;;;;;variable
-   (types (x : t Γ) x t)]
-  [(types Γ x_1 t_1)
-;  (side-condition (different x_1 x_2))
-   ------------------------------------
-   (types (x_2 : t_2 Γ) x_1 t_1)]
-   [(types Γ e t) ...
-   --------------------------;;;;;;;;;;;;;;;;;;;can I just do list(t)?
-   (types Γ (list e ...) (list t ...))]
-;  [(types Γ e_1 t)
-;   (types Γ e_2 t) ...
-;   -------------------------------------
-;   (types Γ (list e_1 e_2 ...) (list t))] 
-;  [(types Γ e_1 t_1)
-;   (types Γ e_2 t_2) ...
-;   --------------------------;;;;;;;;;;;;;;;;;;;list(t_1 t_2 ...)?
-;   (types Γ (list e_1 e_2 ...) (list t_1 t_2 ...))]
-  [--------------------;;;;;;;;;;;;;;;;;;;;;;;;;num
-   (types Γ number num)]
-  [(types Γ e num) ...
-   -----------------------;;;;;;;;;;;;;;;;;;;;;;add
-   (types Γ (+ e ...) num)]
-  [(types Γ e_1 num)
-   (types Γ e_2 t)
-   (types Γ e_3 t)
-   -----------------------------;;;;;;;;;;;;;;;;if0
-   (types Γ (if0 e_1 e_2 e_3) t)]
-  [(types Γ e (→ (→ t_1 t_2) (→ t_1 t_2)))
-   ---------------------------------------;;;;;;fix
-   (types Γ (fix e) (→ t_1 t_2))]
-  [-----------------
-   (types Γ tt bool)]
-  [-----------------
-   (types Γ ff bool)]
+  [(types Γ t_1 (→ T_2 T_3))
+   (types Γ t_2 T_2)
+   ------------------------- ;;T-APP
+   (types Γ (t_1 t_2) T_3)]
+
+  [(types (x : T_1 Γ) t T_2)
+   ----------------------------------- ;;T-ABS
+   (types Γ (λ (x T_1) t) (→ T_1 T_2))]
+
+  [
+   ---------------------;;T-VAR
+   (types (x : T Γ) x T)]
+
+  [(types Γ x_1 T_1)
+   (side-condition (different x_1 x_2))
+   ------------------------------------ ;;T-WEAKENING? (x_2 \notin dom(Γ))
+   (types (x_2 : T_2 Γ) x_1 T_1)]
+
+  [
+   ---------------------------- ;;T-NIL
+   (types Γ nil (T_1) list T_1)]
+
+  [(types Γ t_1 T_1)
+   (types Γ t_2 list T_1)
+   --------------------------------------- ;;T-CONS
+   (types Γ (cons (T_1) t_1 t_2) list T_1)]
+
+  [(types Γ t_1 List T_1)
+   ------------------------------- ;; T-NIL?
+   (types Γ nil? (T_1) t_1 Bool)]
+
+  [(types Γ t_1 T_1)
+   ----------------- ;; T_CONS?
+   (types Γ cons (T_1) t_1 Bool)]
+
+  [(types Γ t_1 List T_1)
+   --------------------------- ;; T-FST
+   (types Γ fst (T_1) t_1 T_1)]
+
+  [(types Γ t_1 List T_1)
+   --------------------------- ;; T-FST
+   (types Γ rst (T_1) t_1 T_1)]
+ 
+  [
+   -------------------- ;;T-NUM
+   (types Γ n Num)]
+  
+  [(types Γ n_1 Num) ...
+   ------------------------ ;;T-ADD
+   (types Γ (+ n_1 ...) Num)]
+  
+  [(types Γ t_1 Num)
+   (types Γ t_2 T)
+   (types Γ t_3 T)
+   ----------------------------- ;;T-IF0
+   (types Γ (if0 t_1 t_2 t_3) T)]
+  
+  [(types Γ t_1 (→ T_1 T_1))
+   ------------------------ ;;T-FIX
+   (types Γ (fix t_1) T_1)]
+  
+  [
+   ----------------- ;;T-TRUE
+   (types Γ tt Bool)]
+
+  [
+   ----------------- ;;T-FALSE
+   (types Γ ff Bool)]
+  
 ;  [(types Γ (err t string) t)]
 ;  [(types Γ e (→ (t_0 ...) t))
 ;   (types Γ e_0 t_0)
@@ -100,8 +130,8 @@
 )
   
 (define-extended-language PCF-list-name PCF-list
-  (p (e ...))
-  (P (e ... E e ...))
+  (p (t ...))
+  (P (t ... E t ...))
   (E-name hole
         (v E)
         (E e)
