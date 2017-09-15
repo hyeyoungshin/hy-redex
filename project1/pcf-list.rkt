@@ -174,6 +174,12 @@
    (--> (in-hole P-name (cons? (nil (T))))
         (in-hole P-name ff)
         "cons?-nil-name")
+   (--> (in-hole P-name (nil? (nil (T))))
+        (in-hole P-name tt)
+        "nil?-tname")
+   (--> (in-hole P-name (nil? (cons (T) e_1 e_2)))
+        (in-hole P-name ff)
+        "nil?-fname")
    (--> (in-hole P-name ((fix (λ (x : T) e_1)) e_2))
         (in-hole P-name (((λ (x : T) e_1) (fix (λ (x : T) e_1))) e_2))
         "fix-name")
@@ -251,11 +257,17 @@
    (--> (in-hole P-value (cons? (nil (T))))
         (in-hole P-value ff)
         "cons?-nil-value")
+   (--> (in-hole P-value (nil? (nil (T))))
+        (in-hole P-value tt)
+        "nil?-tvalue")
+   (--> (in-hole P-value (nil? (cons (T) e_1 e_2)))
+        (in-hole P-value ff)
+        "nil?-fvalue")
    (--> (in-hole P-value ((fix (λ (x : T) e_1)) e_2))
         (in-hole P-value (((λ (x : T) e_1) (fix (λ (x : T) e_1))) e_2))
         "fix-value")
-   (--> (in-hole P-value (fix (λ (x: T) e_2)))
-        (in-hole P-value (subst x (fix (λ (x: T) e_2)) e_2))
+   (--> (in-hole P-value (fix (λ (x: T) e_1)))
+        (in-hole P-value (subst x (fix (λ (x: T) e_1)) e_1))
         "fixbeta-value")
    (--> (in-hole P-value (+ number ...))
         (in-hole P-value (∑-value number ...))
@@ -297,10 +309,3 @@
   (not (null? (apply-reduction-relation
                ->name
                (term (,e))))))
-
-
-
-
-
-
-
