@@ -11,7 +11,7 @@
   ;; Programs
   (p (prog (f ...) e))
   ;; Functions
-  (f (define x (λ (x : T) e)))
+  (f (def x e))
   ;; Terms
   (e (e e)
      (λ (x : T) ... e)
@@ -26,7 +26,7 @@
      (+ e ...)
      (if0 e e e)
      (fix e)
-     (def x (λ (x : T) e)) 
+     (def x e) ;;;;;;;;;;;;; should this be just f?
      ;(err t string)
      )
   ;; Values
@@ -39,13 +39,6 @@
      (cons (T) v ...))
   ;; Numbers
   (n number)
-  ;; Operations
-;;  (o cons
-;;     fst
-;;     lst
-;;     +
-;;     ;;;;;;;;;;;;;;;;;;;;;;;;;;should be able to compute length of a list
-;;     )
   ;; Variables
   (x variable-not-otherwise-mentioned)
 
@@ -64,7 +57,7 @@
    (types Γ e_2 T_2)
    ------------------------- ;;T-APP
    (types Γ (e_1 e_2) T_3)]
-
+  
   [(types (x : T_1 Γ) e T_2)
    ----------------------------------- ;;T-ABS
    (types Γ (λ (x T_1) e) (→ T_1 T_2))]
@@ -129,13 +122,6 @@
   [
    ----------------- ;;T-FALSE
    (types Γ ff Bool)]
-  
-;  [(types Γ (err t string) t)]
-;  [(types Γ e (→ (t_0 ...) t))
-;   (types Γ e_0 t_0)
-;        ...
-;   -------------------------- ;;;;;;;;;;;;n-ary application
-;   (types Γ (e e_0 ...) t)]
 )
   
 (define-extended-language NPCF PCF-list
@@ -151,8 +137,6 @@
           (cons? E-name)
           (fix E-name)))
           
-
-
 
 (require redex/tut-subst)
 (define-metafunction NPCF
@@ -199,21 +183,22 @@
    (--> (in-hole P-name ((λ (x : T) e_1) e_2))
         (in-hole P-name (subst x e_2 e_1))
         "beta-name")
-   (--> (in-hole P-name (+ number ...))
-        (in-hole P-name (∑ number ...))
+   (--> (in-hole P-name (+ n ...))
+        (in-hole P-name (∑-name n ...))
         "plus-name")
-   (--> (prog ((define x_1 v_1) ... (define x v) (define x_2 v_2) ...)
+   (--> (prog ((def x_1 v_1) ... (def x v) (def x_2 v_2) ...)
         (in-hole E-name x))
-        (prog ((define x_1 v_1) ... (define x v) (define x_2 v_2) ...)
+        (prog ((def x_1 v_1) ... (def x v) (def x_2 v_2) ...)
            (in-hole E-name v))
-        "def-name")))
+        "def-name")
+   (--> (prog f ... v)
+         v
+        "halt-name")))
   
-   
 (define-metafunction NPCF
-  Σ : number ... -> number
-  [(Σ number ...)
-  ,(apply + (term (number ...)))])
-
+  ∑-name : number ... -> number
+  [(∑-name number ...)
+   ,(apply + (term (number ...)))])
 
 (define-metafunction NPCF
   eval-name : t -> v
@@ -272,21 +257,46 @@
    (--> (in-hole P-value (fix (λ (x: T) e_2)))
         (in-hole P-value (subst x (fix (λ (x: T) e_2)) e_2))
         "fixbeta-value")
-   (--> (in-hole P-name (+ number ...))
-        (in-hole P-name (∑ number ...))
+   (--> (in-hole P-value (+ number ...))
+        (in-hole P-value (∑-value number ...))
         "plus-value")
-   (--> (prog ((define x_1 v_1) ... (define x v) (define x_2 v_2) ...)
+   (--> (prog ((def x_1 v_1) ... (def x v) (def x_2 v_2) ...)
         (in-hole E-value x))
-        (prog ((define x_1 v_1) ... (define x v) (define x_2 v_2) ...)
+        (prog ((def x_1 v_1) ... (def x v) (def x_2 v_2) ...)
            (in-hole E-value v))
-        "def-value")))
+        "def-value")
+   (--> (prog f ... v)
+        v
+        "halt-value")))
 
+(define-metafunction VPCF
+  ∑-value : number ... -> number
+  [(∑-value number ...)
+   ,(apply + (term (number ...)))])
 
 (define-metafunction VPCF
   eval-value : e -> v
   [(eval-value e) ,(first (apply-reduction-relation* ->value (term e)))])
 
-     
+
+
+;;Random testing
+(define (progress-holds? e)
+  (if (types? e)
+      (or (v? e)
+          (reduces? e))
+      #t))
+
+(define (types? e)
+  (not (null? (judgment-holds (types · ,e t)
+                              t))))
+ 
+(define v? (redex-match NPCF v))
+ 
+(define (reduces? e)
+  (not (null? (apply-reduction-relation
+               ->name
+               (term (,e))))))
 
 
 
