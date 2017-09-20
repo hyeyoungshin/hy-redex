@@ -40,88 +40,133 @@
   (n number)
   ;; Variables
   (x variable-not-otherwise-mentioned)
-  #:binding-forms
-  (λ (x T) e #:refers-to x)
+
   ;; Type environment
   (Γ ·
-     (Γ (x T)))
+     (Γ (x T) ...))
+    #:binding-forms
+  (λ (x T) e #:refers-to x)
   )
 
 (define-judgment-form PCF-list
-  #:mode (⊢ I I O)
-  #:contract (⊢ Γ e T) 
+  #:mode (⊢_p I I O)
+  #:contract (⊢_p Γ p T)
+  [(⊢_e (Γ (x_1 T_1) ...) v_1 T_1) ...
+   (⊢_e (Γ (x_1 T_1) ...) e T)
+   ------------------------------------------
+   (⊢_p Γ (prog (def (x_1 T_1) v_1) ... e) T)]
+)
+  
+;  [(⊢_e (Γ (x_1 T_1) (x_2 T_2) ... (x_n T_n)) v_1 T_1)
+;   (⊢_e (Γ (x_1 T_1) (x_2 T_2) ... (x_n T_n)) v_2 T_2) ...
+;   (⊢_e (Γ (x_1 T_1) (x_2 T_2) ... (x_n T_n)) v_n T_n)
+;   (⊢_e (Γ (x_1 T_1) (x_2 T_2) ... (x_n T_n)) e T)
+;   ---------------------------------------------------------------------------------- "T-PROG"
+;   (⊢_p Γ (prog (def (x_1 T_1) v_1) (def (x_2 T_2) v_2) ... (def (x_n T_n) v_n) e) T)]
+;)
+
+(module+ test
+   (require chk)
+  (chk
+   #:t (redex-match? PCF-list Γ (term ·))
+   #:t (redex-match? PCF-list n (term 2))
+   #:t (redex-match? PCF-list p (term (prog (def (x Num) 2) 2)))
+   #:= (judgment-holds (⊢_e (· (x Num)) x T) T)
+   (list (term Num))
+   #:= (judgment-holds (⊢_e ((· (x Num)) (y Num)) x T) T)
+   (list (term Num))
+   #:= (judgment-holds (⊢_e (· (x Num)) 1 T) T)
+   (list (term Num))
+   #:= (judgment-holds (⊢_e (· (x Num)) (+ x 1) T) T)
+   (list (term Num))
+   #:= 
+   (judgment-holds (⊢_p · (prog (def (x Num) 2) (+ x 1)) T) T)
+   (list (term Num))
+  ))
+
+(define-judgment-form PCF-list
+  #:mode (⊢_e I I O)
+  #:contract (⊢_e Γ e T) 
   [------------- "T-TRUE"
-   (⊢ · tt Bool)]
+   (⊢_e Γ tt Bool)]
 
   [------------- "T-FALSE"
-   (⊢ · ff Bool)]
+   (⊢_e Γ ff Bool)]
 
   [------------- "T-NUM"
-   (⊢ · n Num)]
+   (⊢_e Γ n Num)]
 
-  [(⊢ (Γ (x_1 T_1)) e_2 T_2)
-   ----------------------------------- "T-ABS"
-   (⊢ Γ (λ (x_1 T_1) e_2) (→ T_1 T_2))]
+  [(⊢_e (Γ (x_1 T_1)) e_2 T_2)
+   ------------------------------------- "T-ABS"
+   (⊢_e Γ (λ (x_1 T_1) e_2) (→ T_1 T_2))]
   
-  [(⊢ Γ e_1 (→ T_1 T_2))
-   (⊢ Γ e_2 T_1)
-   ------------------------- "T-APP"
-   (⊢ Γ (e_1 e_2) T_2)]
+  [(⊢_e Γ e_1 (→ T_1 T_2))
+   (⊢_e Γ e_2 T_1)
+   ---------------------- "T-APP"
+   (⊢_e Γ (e_1 e_2) T_2)]
 
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"T-PROG" or "T-DEF"
+  [(⊢_e (Γ [(x_1 T_1) (x_2 T_2) ... (x_n T_n)]) v_1 T_1)
+   (⊢_e (Γ [(x_1 T_1) (x_2 T_2) ... (x_n T_n)]) v_2 T_2) ...
+   (⊢_e (Γ [(x_1 T_1) (x_2 T_2) ... (x_n T_n)]) v_n T_n)
+   (⊢_e (Γ [(x_1 T_1) (x_2 T_2) ... (x_n T_n)]) e T)
+   ---------------------------------------------------------------------------------- "T-PROG"
+   (⊢_e Γ (prog (def (x_1 T_1) v_1) (def (x_2 T_2) v_2) ... (def (x_n T_n) v_n) e) T)]
 
-  [(⊢ Γ x_1 T_1)
-   (side-condition (different x_1 x_2))
+  [(⊢_e Γ x_2 T_1)
+   ------------------------------------ "T-WEAK" 
+   (⊢_e (Γ (x_!_1 T_2)) (name x_2 x_!_1) T_1)]
+
+  [
    ------------------------------------ "T-VAR" 
-   (⊢ (Γ (x_2 T_2)) x_1 T_1)]
+   (⊢_e (Γ (x_1 T_1)) x_1 T_1)]
 
-  [(⊢ Γ e_1 (→ T_1 T_1))
+  [(⊢_e Γ e_1 (→ T_1 T_1))
    --------------------- "T-FIX"
-   (⊢ Γ (fix e_1) T_1)]
+   (⊢_e Γ (fix e_1) T_1)]
   
-  [(⊢ Γ e_1 Num)
-   (⊢ Γ e_2 Num)
+  [(⊢_e Γ e_1 Num)
+   (⊢_e Γ e_2 Num)
    --------------------- "T-SUM"
-   (⊢ Γ (+ e_1 e_2) Num)]
+   (⊢_e Γ (+ e_1 e_2) Num)]
 
-  [(⊢ Γ e_1 Num)
-   (⊢ Γ e_2 Num)
+  [(⊢_e Γ e_1 Num)
+   (⊢_e Γ e_2 Num)
    --------------------- "T-SUB"
-   (⊢ Γ (- e_1 e_2) Num)]
+   (⊢_e Γ (- e_1 e_2) Num)]
 
-  [(⊢ Γ e_1 T_1)
-   (⊢ Γ e_2 (List T_1))
+  [(⊢_e Γ e_1 T_1)
+   (⊢_e Γ e_2 (List T_1))
    ------------------------------- "T-CONS"
-   (⊢ Γ (cons e_1 e_2) (List T_1))]
+   (⊢_e Γ (cons e_1 e_2) (List T_1))]
 
-  [(⊢ Γ e_1 (List T_1))
+  [(⊢_e Γ e_1 (List T_1))
    ------------------- "T-FST"
-   (⊢ Γ (fst e_1) T_1)]
+   (⊢_e Γ (fst e_1) T_1)]
 
-  [(⊢ Γ e_1 (List T_1))
+  [(⊢_e Γ e_1 (List T_1))
    -------------------------- "T-RST"
-   (⊢ Γ (rst e_1) (List T_1))]
+   (⊢_e Γ (rst e_1) (List T_1))]
 
-  [(⊢ Γ e_1 T_1)
-   (⊢ Γ e_2 (List T_1))
+  [(⊢_e Γ e_1 T_1)
+   (⊢_e Γ e_2 (List T_1))
    -------------------------- "T_CONS?"
-   (⊢ Γ (cons? e_1 e_2) Bool)]
+   (⊢_e Γ (cons? e_1 e_2) Bool)]
 
-  [(⊢ Γ e_1 (List T))
+  [(⊢_e Γ e_1 (List T))
    ------------------------------- "T-NIL?"
-   (⊢ Γ (nil? e_1) Bool)]
+   (⊢_e Γ (nil? e_1) Bool)]
 
 
   [
    -------------------------------- "T-NIL"
-   (⊢ · (nil (T_1)) (List T_1))]
+   (⊢_e · (nil (T_1)) (List T_1))]
 
 
-  [(⊢ Γ e_1 Num)
-   (⊢ Γ e_2 T)
-   (⊢ Γ e_3 T)
+  [(⊢_e Γ e_1 Num)
+   (⊢_e Γ e_2 T)
+   (⊢_e Γ e_3 T)
    ----------------------------- "T-IF0"
-   (⊢ Γ (if0 e_1 e_2 e_3) T)]
+   (⊢_e Γ (if0 e_1 e_2 e_3) T)]
   )
 
 
@@ -152,8 +197,8 @@
   (reduction-relation
    VPCF
    #:domain p
-   (--> (in-hole P-value ((λ (x T) e_1) v_1)) ;;Does this enforce a value 
-        (in-hole P-value (subst e_1 x v_1))   ;;for an argument?
+   (--> (in-hole P-value ((λ (x T) e_1) v_1)) 
+        (in-hole P-value (subst e_1 x v_1))  
         "EV-beta")
    (--> (in-hole P-value (fix (λ (x T) e_1)))
         (in-hole P-value (subst x (fix (λ (x T) e_1)) e_1))
@@ -311,6 +356,10 @@
 ;  eval-name : t -> v
 ;  [(eval-name t) ,(first (apply-reduction-relation* ->name (term t)))])
 
+(define-metafunction PCF-list
+  [(different x_1 x_1) #f]
+  [(different x_1 x_2) #t])
+
 
 
 
@@ -322,7 +371,7 @@
       #t))
 
 (define (types? e)
-  (not (null? (judgment-holds (⊢ · ,e t)
+  (not (null? (judgment-holds (⊢_e · ,e t)
                               t))))
  
 (define v? (redex-match NPCF v))
