@@ -13,7 +13,7 @@
   ;; Defs
   (d (def (x T) v))
   ;; Terms
-  (e v  ;tt|ff|n
+  (e v  
      x
      d
      (λ (x T) e)
@@ -35,6 +35,7 @@
      n
      (λ (x T) e)
      (nil T)
+     (fix v)
      (err T string)
    )
   ;; Numbers
@@ -64,18 +65,35 @@
    (require chk)
   (define def1 (term (x Num)))
   (define def2 (term (y Num)))
+  (define def3 (term (z (List Num))))
   (define example1 (term (prog (def ,def1 2) (def ,def2 3) (+ x y))))
   (test-equal (judgment-holds (⊢_p · ,example1 Num)) #t)
   (test-equal (judgment-holds (⊢_e (· ,def1 ,def2) 2 Num)) #t)
   (test-equal (judgment-holds (⊢_e (· ,def1 ,def2) 3 Num)) #t)
   (test-equal (judgment-holds (⊢_e (· (y Num) (x Num)) x Num)) #t)
   (test-equal (judgment-holds (⊢_e (· ,def1 ,def2) (+ x y) Num)) #t)
+  (test-equal (judgment-holds (⊢_e (· ,def1 ,def3) (cons x z) (List Num))) #t)
+  (test-equal (judgment-holds (⊢_e · (nil Num) (List Num))) #t)
+  (test-equal (judgment-holds (⊢_e · (cons 2 (nil Num)) (List Num))) #t)
+  (test-equal (judgment-holds (⊢_e · (cons 2 (cons 2 (nil Num))) (List Num))) #t)
+  (test-equal (judgment-holds (⊢_e · (cons? (cons 2 (nil Num))) Bool)) #t)
+  (test-equal (judgment-holds (⊢_e · (nil? (cons 2 (nil Num))) Bool)) #t)
+  (test-equal (judgment-holds (⊢_e · (fst (cons 2 (nil Num))) Num)) #t)
+  (test-equal (judgment-holds (⊢_e · (rst (cons 2 (nil Num))) (List Num))) #t)
+  (test-equal (judgment-holds (⊢_e · (rst (nil Num)) (List Num))) #t)
+  (test-equal (judgment-holds (⊢_e · (fst (nil Num)) Num)) #t) ;;;;;;;;;;;;;;;;;should this be ok?
+;  
+  
   (chk
+   #:t (redex-match? PCF-list p (term (prog (+ 2 3))))
+   #:t (redex-match? PCF-list p (term (prog 5)))
    #:t (redex-match? PCF-list Γ (term ·))
    #:t (redex-match? PCF-list n (term 2))
    #:t (redex-match? PCF-list p (term (prog (def (x Num) 2) 2)))
    #:t (redex-match? PCF-list p (term (prog (def (x Num) 2) x)))
    #:t (redex-match? PCF-list p example1)
+   #:t (redex-match? PCF-list e (term (nil Num)))
+   #:t (redex-match? PCF-list p (term (prog (def (x Num) 2) (def (z (List Num)) (nil Num)) (cons x z))))
    #:= (judgment-holds (⊢_e (· (x Num)) x T) T)
    (list (term Num))
    #:= (judgment-holds (⊢_e (· (x Num) (y Num)) x T) T)
@@ -90,7 +108,6 @@
    #:= 
    (judgment-holds (⊢_p · ,example1 Num) Num)
    (list (term Num))
-   
    #:= 
    (judgment-holds (⊢_p · (prog (def (y Num) 2) (def (y Num) 3) (+ 2 y)) T) T)
    (list (term Num))
@@ -100,16 +117,24 @@
    #:= 
    (judgment-holds (⊢_p · (prog (def (x Num) 2) (def (y Num) 3) (+ x y)) T) T)
    (list (term Num))
+   #:= 
+   (judgment-holds (⊢_p · (prog (def (x Num) 2) (def (y (List Num)) (nil Num)) (cons x y)) T) T)
+   (list (term (List Num)))
+   
 
+;   #:= 
+;   (judgment-holds (⊢_p · (prog (def (x Num) 2) (def (x Bool) tt) x) T) T)
+;   (list (term (Bool)))
   ))
+
 
 (define-judgment-form PCF-list
   #:mode (⊢_e I I O)
   #:contract (⊢_e Γ e T) 
-  [------------- "T-TRUE"
+  [--------------- "T-TRUE"
    (⊢_e Γ tt Bool)]
 
-  [------------- "T-FALSE"
+  [--------------- "T-FALSE"
    (⊢_e Γ ff Bool)]
 
   [------------- "T-NUM"
@@ -133,10 +158,10 @@
    ----------------------------------------------------- "T-VAR" 
    (⊢_e (Γ (x T) ... (x_1 T_1) (x_!_1 T_2) ...) x_1 T_1)]
 
-  #;
+
   [
-   ----------------------------------------------------- "T-SHADOW" 
-   (⊢_e (Γ (x_1 T_1) ... (x_1 T_2) ...) x_1 T_2)]
+   --------------------------------------------------------------------------------------------------- "T-SHADOW" 
+   (⊢_e (Γ (x_s T_s) ... (x_1 T_1) (x_s2 T_s2) ... ((name x_1 x_!_1) T_2) (x_!_1 T_rest) ...) x_1 T_2)]
 
   [(⊢_e Γ e_1 (→ T_1 T_1))
    --------------------- "T-FIX"
@@ -144,40 +169,40 @@
   
   [(⊢_e Γ e_1 Num)
    (⊢_e Γ e_2 Num)
-   --------------------- "T-SUM"
+   ----------------------- "T-SUM"
    (⊢_e Γ (+ e_1 e_2) Num)]
 
   [(⊢_e Γ e_1 Num)
    (⊢_e Γ e_2 Num)
-   --------------------- "T-SUB"
+   ----------------------- "T-SUB"
    (⊢_e Γ (- e_1 e_2) Num)]
 
   [(⊢_e Γ e_1 T_1)
    (⊢_e Γ e_2 (List T_1))
-   ------------------------------- "T-CONS"
+   --------------------------------- "T-CONS"
    (⊢_e Γ (cons e_1 e_2) (List T_1))]
 
   [(⊢_e Γ e_1 (List T_1))
-   ------------------- "T-FST"
+   --------------------- "T-FST"
    (⊢_e Γ (fst e_1) T_1)]
 
   [(⊢_e Γ e_1 (List T_1))
-   -------------------------- "T-RST"
+   ---------------------------- "T-RST"
    (⊢_e Γ (rst e_1) (List T_1))]
 
   [(⊢_e Γ e_1 T_1)
    (⊢_e Γ e_2 (List T_1))
-   -------------------------- "T_CONS?"
-   (⊢_e Γ (cons? e_1 e_2) Bool)]
+   ---------------------------- "T_CONS?"
+   (⊢_e Γ (cons? (cons e_1 e_2)) Bool)]
 
   [(⊢_e Γ e_1 (List T))
-   ------------------------------- "T-NIL?"
+   ----------------------- "T-NIL?"
    (⊢_e Γ (nil? e_1) Bool)]
 
 
   [
-   -------------------------------- "T-NIL"
-   (⊢_e · (nil (T_1)) (List T_1))]
+   ------------------------------ "T-NIL"
+   (⊢_e Γ (nil T_1) (List T_1))]
 
 
   [(⊢_e Γ e_1 Num)
@@ -192,7 +217,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define-extended-language VPCF PCF-list
-  (v (cons v v))
+  (v .... (cons v v))
   (P-value (prog d ... E-value))
   (E-value hole
            (E-value e)
@@ -216,10 +241,10 @@
    VPCF
    #:domain p
    (--> (in-hole P-value ((λ (x T) e_1) v_1)) 
-        (in-hole P-value (subst e_1 x v_1))  
+        (in-hole P-value (substitute e_1 x v_1))  
         "EV-beta")
    (--> (in-hole P-value (fix (λ (x T) e_1)))
-        (in-hole P-value (subst x (fix (λ (x T) e_1)) e_1))
+        (in-hole P-value (mf-apply substitute x (fix (λ (x T) e_1)) e_1))
         "EV-fix")
    (--> (in-hole P-value ((fix (λ (x T) e_1)) e_2))
         (in-hole P-value (((λ (x T) e_1) (fix (λ (x T) e_1))) e_2))
@@ -261,16 +286,22 @@
    (--> (in-hole P-value (- n_1 n_2))
         (in-hole P-value ,(- (term n_1) (term n_2)))
         "EV-sub")
-   (--> (prog ((def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...)
+   (--> (prog (def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...
            (in-hole E-value x))
-        (prog ((def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...)
+        (prog (def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...
            (in-hole E-value v))
         "EV-def")
-   (--> (prog f ... v)
-        v
-        "EV-halt")
   )
  )
+
+(module+ test
+(chk
+   #:t (redex-match? VPCF (in-hole P-value (+ n_1 n_2)) (term (prog (+ 2 3))))
+   #:t (redex-match? VPCF p (term (prog (+ 2 3))))
+   #:= (term (eval-value (prog (+ 2 3))))
+   (term 5)
+   ))
+
 
 ;(define-metafunction VPCF
 ;  EV-∑ : number ... -> number
@@ -278,8 +309,10 @@
 ;   ,(apply + (term (number ...)))])
 
 (define-metafunction VPCF
-  eval-value : e -> v
-  [(eval-value e) ,(first (apply-reduction-relation* ->value (term e)))])
+  eval-value : p -> v
+  [(eval-value p)
+   v
+   (where (prog d ... v) ,(first (apply-reduction-relation* ->value (term p))))])
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -351,9 +384,9 @@
    (--> (in-hole P-name (- n_1 n_2))
         (in-hole P-name ,(- (term n_1) (term n_2)))
         "EN-sub")
-   (--> (prog ((def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...)
+   (--> (prog (def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...
            (in-hole E-name x))
-        (prog ((def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...)
+        (prog (def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...
            (in-hole E-name v))
         "EN-def")
    (--> (prog f ... v)
