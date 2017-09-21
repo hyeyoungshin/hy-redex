@@ -35,7 +35,8 @@
      n
      (λ (x T) e)
      (nil T)
-     (err T string))
+     (err T string)
+   )
   ;; Numbers
   (n number)
   ;; Variables
@@ -44,36 +45,40 @@
   ;; Type environment
   (Γ ·
      (Γ (x T) ...))
-    #:binding-forms
+
+  #:binding-forms
   (λ (x T) e #:refers-to x)
-  )
+ )
 
 (define-judgment-form PCF-list
   #:mode (⊢_p I I O)
   #:contract (⊢_p Γ p T)
-  [(⊢_e (Γ (x_1 T_1) ...) v_1 T_1) ...
+  [(⊢_e (Γ (x_1 T_1) ...) v_1 T_1)
+   ...
    (⊢_e (Γ (x_1 T_1) ...) e T)
    ------------------------------------------
    (⊢_p Γ (prog (def (x_1 T_1) v_1) ... e) T)]
 )
   
-;  [(⊢_e (Γ (x_1 T_1) (x_2 T_2) ... (x_n T_n)) v_1 T_1)
-;   (⊢_e (Γ (x_1 T_1) (x_2 T_2) ... (x_n T_n)) v_2 T_2) ...
-;   (⊢_e (Γ (x_1 T_1) (x_2 T_2) ... (x_n T_n)) v_n T_n)
-;   (⊢_e (Γ (x_1 T_1) (x_2 T_2) ... (x_n T_n)) e T)
-;   ---------------------------------------------------------------------------------- "T-PROG"
-;   (⊢_p Γ (prog (def (x_1 T_1) v_1) (def (x_2 T_2) v_2) ... (def (x_n T_n) v_n) e) T)]
-;)
-
 (module+ test
    (require chk)
+  (define def1 (term (x Num)))
+  (define def2 (term (y Num)))
+  (define example1 (term (prog (def ,def1 2) (def ,def2 3) (+ x y))))
+  (test-equal (judgment-holds (⊢_p · ,example1 Num)) #t)
+  (test-equal (judgment-holds (⊢_e (· ,def1 ,def2) 2 Num)) #t)
+  (test-equal (judgment-holds (⊢_e (· ,def1 ,def2) 3 Num)) #t)
+  (test-equal (judgment-holds (⊢_e (· (y Num) (x Num)) x Num)) #t)
+  (test-equal (judgment-holds (⊢_e (· ,def1 ,def2) (+ x y) Num)) #t)
   (chk
    #:t (redex-match? PCF-list Γ (term ·))
    #:t (redex-match? PCF-list n (term 2))
    #:t (redex-match? PCF-list p (term (prog (def (x Num) 2) 2)))
+   #:t (redex-match? PCF-list p (term (prog (def (x Num) 2) x)))
+   #:t (redex-match? PCF-list p example1)
    #:= (judgment-holds (⊢_e (· (x Num)) x T) T)
    (list (term Num))
-   #:= (judgment-holds (⊢_e ((· (x Num)) (y Num)) x T) T)
+   #:= (judgment-holds (⊢_e (· (x Num) (y Num)) x T) T)
    (list (term Num))
    #:= (judgment-holds (⊢_e (· (x Num)) 1 T) T)
    (list (term Num))
@@ -82,6 +87,20 @@
    #:= 
    (judgment-holds (⊢_p · (prog (def (x Num) 2) (+ x 1)) T) T)
    (list (term Num))
+   #:= 
+   (judgment-holds (⊢_p · ,example1 Num) Num)
+   (list (term Num))
+   
+   #:= 
+   (judgment-holds (⊢_p · (prog (def (y Num) 2) (def (y Num) 3) (+ 2 y)) T) T)
+   (list (term Num))
+   #:= 
+   (judgment-holds (⊢_p · (prog (def (x Num) 2) (def (y Bool) tt) y) T) T)
+   (list (term Bool))
+   #:= 
+   (judgment-holds (⊢_p · (prog (def (x Num) 2) (def (y Num) 3) (+ x y)) T) T)
+   (list (term Num))
+
   ))
 
 (define-judgment-form PCF-list
@@ -105,20 +124,19 @@
    ---------------------- "T-APP"
    (⊢_e Γ (e_1 e_2) T_2)]
 
-  [(⊢_e (Γ [(x_1 T_1) (x_2 T_2) ... (x_n T_n)]) v_1 T_1)
-   (⊢_e (Γ [(x_1 T_1) (x_2 T_2) ... (x_n T_n)]) v_2 T_2) ...
-   (⊢_e (Γ [(x_1 T_1) (x_2 T_2) ... (x_n T_n)]) v_n T_n)
-   (⊢_e (Γ [(x_1 T_1) (x_2 T_2) ... (x_n T_n)]) e T)
-   ---------------------------------------------------------------------------------- "T-PROG"
-   (⊢_e Γ (prog (def (x_1 T_1) v_1) (def (x_2 T_2) v_2) ... (def (x_n T_n) v_n) e) T)]
-
+  #;
   [(⊢_e Γ x_2 T_1)
-   ------------------------------------ "T-WEAK" 
+   ------------------------------------------ "T-WEAK" 
    (⊢_e (Γ (x_!_1 T_2)) (name x_2 x_!_1) T_1)]
 
   [
-   ------------------------------------ "T-VAR" 
-   (⊢_e (Γ (x_1 T_1)) x_1 T_1)]
+   ----------------------------------------------------- "T-VAR" 
+   (⊢_e (Γ (x T) ... (x_1 T_1) (x_!_1 T_2) ...) x_1 T_1)]
+
+  #;
+  [
+   ----------------------------------------------------- "T-SHADOW" 
+   (⊢_e (Γ (x_1 T_1) ... (x_1 T_2) ...) x_1 T_2)]
 
   [(⊢_e Γ e_1 (→ T_1 T_1))
    --------------------- "T-FIX"
