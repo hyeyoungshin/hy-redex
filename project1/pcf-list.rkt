@@ -15,7 +15,7 @@
   ;; Terms
   (e v  
      x
-     d
+     ;;d bug!!!!!!!!
      (λ (x T) e)
      (e e)
      (fix e)
@@ -450,13 +450,14 @@
    (term 3)
    #:= (term (eval-name (prog (def (x (List Bool)) (nil Bool)) (nil? x))))
    (term tt)
-
    #:= (term (eval-name (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                 (λ (x Num)
                                                                   (if0 x tt
                                                                      (if0 (- x 1) ff (ie (- x 2)))))))
                              ((fix xx) 3))))
    (term ff)
+   #:= (term (eval-name (prog (fst (nil Bool)))))
+   (term (err Bool "fst of nil"))
    ))
 
 
@@ -476,13 +477,18 @@
           (reduces? e))
       #t))
 
+(define-judgment-form VPCF
+  #:mode (typed I I O)
+  [(⊢_e Γ e T)
+   --------------
+   (typed Γ e T)])
+
 (define (types? e)
-  (not (null? (judgment-holds (⊢_e · ,e t)
-                              t))))
+  (not (null? (judgment-holds (⊢_p · ,e T)
+                              T))))
  
-(define v? (redex-match NPCF v))
- 
+(define v? (redex-match VPCF (prog d ... v)))  ;;define a new definition of "value program" 
 (define (reduces? e)
   (not (null? (apply-reduction-relation
-               ->name
-               (term (,e))))))
+               ->value
+               (term ,e))))) ;;or wrap an expression in a program (term (prog (,e))) and check ⊢_e
