@@ -1,0 +1,25 @@
+#lang project1/NPCF
+
+(def (x Num) 1)
+(def (y (List Num)) (cons 1 (nil Num)))
+(def (ones (List Num)) (cons 1 ones)) ;;syntax error
+(def (add1* (→ (List Num) (List Num)))
+  (λ (l (List Num))
+    (if0 (nil? l)
+         (nil Num)
+         (cons (+ (fst l) 1) (add1* (rst l))))))
+
+;(fst ones)
+;; expected 1
+;; returns 1
+
+;(cons (+ 1 (fst ones)) y)
+;; expected (cons 2 (cons 1 (nil Num))) <= wrong expectation
+;; returns '(cons (+ 1 (fst ones)) y)
+
+;(fst (cons (+ 1 (fst ones)) y))
+;; expected 2
+;; returns 2
+
+(fst (add1* (cons (+ 1 (fst ones)) y)))
+;; expected 3
