@@ -7,7 +7,8 @@
 
 (provide
   ;; the grammar for PCF plus lists 
-  VPCF 
+  VPCF
+  NPCF
 
   ;; the reduction systems 
   ->value
@@ -208,11 +209,11 @@
   [(⊢_e Γ e_1 T_1)
    (⊢_e Γ e_2 (List T_1))
    ---------------------------- "T_CONS?"
-   (⊢_e Γ (cons? (cons e_1 e_2)) Bool)]
+   (⊢_e Γ (cons? (cons e_1 e_2)) Num)]
 
   [(⊢_e Γ e_1 (List T))
    ----------------------- "T-NIL?"
-   (⊢_e Γ (nil? e_1) Bool)]
+   (⊢_e Γ (nil? e_1) Num)]
 
 
   [
@@ -281,16 +282,16 @@
         (in-hole P-value (err T "rst of nil"))
         "EV-rsterr")
    (--> (in-hole P-value (cons? (cons v_1 v_2)))
-        (in-hole P-value tt)
+        (in-hole P-value 0)
         "EV-cons?tt")
    (--> (in-hole P-value (cons? (nil T)))
-        (in-hole P-value ff)
+        (in-hole P-value 1)
         "EV-cons?ff")
    (--> (in-hole P-value (nil? (nil T)))
-        (in-hole P-value tt)
+        (in-hole P-value 0)
         "EV-nil?tt")
    (--> (in-hole P-value (nil? (cons v_1 v_2)))
-        (in-hole P-value ff)
+        (in-hole P-value 1)
         "EV-nil?ff")
    (--> (in-hole P-value (if0 0 e_1 e_2))
         (in-hole P-value e_1)
@@ -403,16 +404,16 @@
         (in-hole P-name (err T "rst of nil"))
         "EN-rsterr")
    (--> (in-hole P-name (cons? (cons e_1 e_2)))
-        (in-hole P-name tt)
+        (in-hole P-name 0)
         "EN-cons?tt")
    (--> (in-hole P-name (cons? (nil T)))
-        (in-hole P-name ff)
+        (in-hole P-name 1)
         "EN-cons?ff")
    (--> (in-hole P-name (nil? (nil T)))
-        (in-hole P-name tt)
+        (in-hole P-name 0)
         "EN-nil?tt")
    (--> (in-hole P-name (nil? (cons e_1 e_2)))
-        (in-hole P-name ff)
+        (in-hole P-name 1)
         "EN-nil?ff")
    (--> (in-hole P-name (if0 0 e_1 e_2))
         (in-hole P-name e_1)
@@ -491,7 +492,7 @@
 
 
 
-;;Redex Random testing Trial
+;;Redex Random testing
 (define (progress-holds? e)
   (if (types? e)
       (or (v? e)
