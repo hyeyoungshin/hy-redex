@@ -1,6 +1,24 @@
 #lang racket
 
+;; This module implements PCF with lists in three variants:
+;; -- call-by-name 
+;; -- call-by-value
+;; -- call-by-value with unit type [TODO]
+
+(provide
+  ;; the grammar for PCF plus lists 
+  VPCF 
+
+  ;; the reduction systems 
+  ->value
+  ->name)
+
+;; ---------------------------------------------------------------------------------------------------
+;; dependencies 
 (require redex/reduction-semantics)
+
+;; ---------------------------------------------------------------------------------------------------
+;; implementation 
 
 (define-language PCF-list 
   ;; Types
@@ -60,7 +78,8 @@
    ------------------------------------------ "T-PRO"
    (⊢_p Γ (prog (def ((name x_1 x_!_1) T_1) v_1) ... e) T)]
 )
-  
+
+#;
 (module+ test
    (require chk)
   (define def1 (term (x Num)))
@@ -300,6 +319,7 @@
    v
    (where (prog d ... v) ,(first (apply-reduction-relation* ->value (term p))))])
 
+#;
 (module+ test
   (chk
    #:t (redex-match? VPCF (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
@@ -422,6 +442,7 @@
    (where (prog d ... v) ,(first (apply-reduction-relation* ->name (term p))))])
 
 
+#;
 (module+ test
   (chk
    #:t (redex-match? NPCF ((fix (λ (x (→ Num Num)) x)) 1))
