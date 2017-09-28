@@ -13,6 +13,7 @@
   ;; the reduction systems 
   ->value
   ->name
+  ;; the judgment systems
   ⊢_vp
   ⊢_np)
 
@@ -87,7 +88,6 @@
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on PCF-list
-#;
 (module+ test
   (require chk)
   (define def1 (term (x Num)))
@@ -113,8 +113,6 @@
               #t)
   #;(test-equal (judgment-holds (⊢_p · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) (List Num)))
               #t)
-  
-  
   (chk
    #:t (redex-match? PCF-list (x_!_1 ...) (term (x y z)))
    #:! #:t (redex-match? PCF-list (x_!_1 ... x_!_1) (term ()))
@@ -342,10 +340,11 @@
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on VPCF
-#;
 (module+ test
   (chk
-   #:t (judgment-holds (⊢_vp · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) (List Num)))
+   #:= 
+   (judgment-holds (⊢_vp · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) T) T)
+   (list (term (List Num)))
    #:t (redex-match? VPCF p (term (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y))))
    #:t (redex-match? VPCF (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                  (λ (x Num) (if0 x tt (if0 (- x 1) ff (ie (- x 2)))))))
@@ -476,9 +475,9 @@
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on NPCF
-#;
 (module+ test
   (chk
+   #:t (judgment-holds (⊢_np · (prog (fst (cons (+ 1 1) (cons 1 (nil Num))))) Num))
    #:t (redex-match? NPCF ((fix (λ (x (→ Num Num)) x)) 1))
    #:t (redex-match? NPCF (in-hole P-name (+ n_1 n_2)) (term (prog (+ 2 3))))
    #:t (redex-match? NPCF p (term (prog (+ 2 3))))
