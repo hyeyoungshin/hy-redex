@@ -10,6 +10,8 @@
   VPCF
   NPCF
 
+  ⊢_p
+
   ;; the reduction systems 
   ->value
   ->name)

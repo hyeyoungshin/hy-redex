@@ -6,11 +6,14 @@
 ;; like `PCF1` --- given the grammar and a pattern for recognizing
 ;; definitions.
 
-(define-syntax-rule (define-language
-                      #:module-name lang-module-name
-                      #:reductions (reduction reductions ...)
-                      #:grammar grammar-id
-                      #:defn-pattern defn-pattern)
+(define-syntax-rule
+  (define-language
+    #:module-name lang-module-name
+    #:reductions (reduction)
+    #:grammar grammar-id
+    #:defn-pattern defn-pattern
+    #:type-judgment ⊢_p)
+  ;; ==> 
   (begin
     
     (provide
@@ -36,16 +39,12 @@
         [(_ . e)
          #`(#%top-interaction . (run-all grammar-id reduction (prog ,@definitions e)))]))
 
-    (define (tee x)
-      (displayln x)
-      x)
-
     (define-syntax (module-begin stx)
       (syntax-parse stx
         [(_ defns:id e (... ...)) ; the `defns` identifier is added by the reader
          #`(#%module-begin
             (define defns (filter (redex-match? grammar-id defn-pattern) (term (e (... ...)))))
-            (run-all grammar-id reduction (prog e (... ...))))]))
+            (run grammar-id reduction ⊢_p (prog e (... ...))))]))
 
     ;; -----------------------------------------------------------------------------------------------
     ;; reader
