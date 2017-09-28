@@ -10,11 +10,11 @@
   VPCF
   NPCF
 
-  ⊢_p
-
   ;; the reduction systems 
   ->value
-  ->name)
+  ->name
+  ⊢_vp)
+
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; dependencies 
@@ -57,13 +57,11 @@
      (λ (x T) e)
      (nil T)
      (fix v)
-     (err T string)
-   )
+     (err T string))
   ;; Numbers
   (n number)
   ;; Variables
   (x variable-not-otherwise-mentioned)
-
   ;; Type environment
   (Γ ·
      (Γ (x T) ...))
@@ -72,6 +70,8 @@
   (λ (x T) e #:refers-to x)
  )
 
+;; ---------------------------------------------------------------------------------------------------
+;; Typing judgement for PCF-list programs
 (define-judgment-form PCF-list
   #:mode (⊢_p I I O)
   #:contract (⊢_p Γ p T)
@@ -82,9 +82,13 @@
    (⊢_p Γ (prog (def ((name x_1 x_!_1) T_1) v_1) ... e) T)]
 )
 
+
+
+;; ---------------------------------------------------------------------------------------------------
+;; Tests on PCF-list
 #;
 (module+ test
-   (require chk)
+  (require chk)
   (define def1 (term (x Num)))
   (define def2 (term (y Num)))
   (define def3 (term (z (List Num))))
@@ -98,13 +102,17 @@
   (test-equal (judgment-holds (⊢_e · (nil Num) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e · (cons 2 (nil Num)) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e · (cons 2 (cons 2 (nil Num))) (List Num))) #t)
-  (test-equal (judgment-holds (⊢_e · (cons? (cons 2 (nil Num))) Bool)) #t)
-  (test-equal (judgment-holds (⊢_e · (nil? (cons 2 (nil Num))) Bool)) #t)
+  (test-equal (judgment-holds (⊢_e · (cons? (cons 2 (nil Num))) Num)) #t)
+  (test-equal (judgment-holds (⊢_e · (nil? (cons 2 (nil Num))) Num)) #t)
   (test-equal (judgment-holds (⊢_e · (fst (cons 2 (nil Num))) Num)) #t)
   (test-equal (judgment-holds (⊢_e · (rst (cons 2 (nil Num))) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e · (rst (nil Num)) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e · (fst (nil Num)) Num)) #t)
-;  
+  (test-equal (judgment-holds (⊢_p · (prog (def (x Num) 1) (def (y (List Num)) (nil Num)) (cons x y)) (List Num)))
+              #t)
+  #;(test-equal (judgment-holds (⊢_p · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) (List Num)))
+              #t)
+  
   
   (chk
    #:t (redex-match? PCF-list (x_!_1 ...) (term (x y z)))
@@ -150,7 +158,8 @@
    (list (term (List Num)))
   ))
 
-
+;; ---------------------------------------------------------------------------------------------------
+;; Typing judgement for PCF-list expressions
 (define-judgment-form PCF-list
   #:mode (⊢_e I I O)
   #:contract (⊢_e Γ e T) 
@@ -235,9 +244,8 @@
   )
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ---------------------------------------------------------------------------------------------------
+;; An extended language of PCF-list that calls-by-value
 (define-extended-language VPCF PCF-list
   (v .... (cons v v))
   (P-value (prog d ... E-value))
@@ -258,6 +266,14 @@
            (if0 E-value e e))
   )
 
+;; ---------------------------------------------------------------------------------------------------
+;; Typing judgement for VPCF programs
+(define-extended-judgment-form VPCF ⊢_p
+  #:mode (⊢_vp I I O)
+  #:contract (⊢_vp Γ p T))
+
+;; ---------------------------------------------------------------------------------------------------
+;; Reduction Relations for VPCF programs
  (define ->value
   (reduction-relation
    VPCF
@@ -322,9 +338,14 @@
    v
    (where (prog d ... v) ,(first (apply-reduction-relation* ->value (term p))))])
 
+
+;; ---------------------------------------------------------------------------------------------------
+;; Tests on VPCF
 #;
 (module+ test
   (chk
+   #:t (judgment-holds (⊢_vp · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) (List Num)))
+   #:t (redex-match? VPCF p (term (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y))))
    #:t (redex-match? VPCF (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                  (λ (x Num) (if0 x tt (if0 (- x 1) ff (ie (- x 2)))))))
                                 ((fix xx) 7)))
@@ -348,7 +369,7 @@
    #:= (term (eval-value (prog (def (y (→ Num Num)) (λ (x Num) (+ x 1))) (y 2))))
    (term 3)
    #:= (term (eval-value (prog (def (x (List Bool)) (nil Bool)) (nil? x))))
-   (term tt)
+   (term 0)
    #:= (term (eval-value (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                 (λ (x Num)
                                                                   (if0 x tt
@@ -359,9 +380,9 @@
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; ---------------------------------------------------------------------------------------------------
+;; An extended language of PCF-list that calls-by-name
 (define-extended-language NPCF PCF-list
   (v .... (cons e e))
   (P-name (prog d ... E-name))
@@ -379,7 +400,14 @@
           (if0 E-name e e))
 )
           
+;; ---------------------------------------------------------------------------------------------------
+;; Typing judgement for NPCF programs
+(define-extended-judgment-form NPCF ⊢_p
+  #:mode (⊢_np I I O)
+  #:contract (⊢_np Γ p T))
 
+;; ---------------------------------------------------------------------------------------------------
+;; Reduction Relations for NPCF programs
 (define ->name
   (reduction-relation
    NPCF
@@ -445,6 +473,8 @@
    (where (prog d ... v) ,(first (apply-reduction-relation* ->name (term p))))])
 
 
+;; ---------------------------------------------------------------------------------------------------
+;; Tests on NPCF
 #;
 (module+ test
   (chk
@@ -473,7 +503,7 @@
    #:= (term (eval-name (prog (def (y (→ Num Num)) (λ (x Num) (+ x 1))) (y 2))))
    (term 3)
    #:= (term (eval-name (prog (def (x (List Bool)) (nil Bool)) (nil? x))))
-   (term tt)
+   (term 0)
    #:= (term (eval-name (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                 (λ (x Num)
                                                                   (if0 x tt

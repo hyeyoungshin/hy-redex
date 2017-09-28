@@ -4,8 +4,8 @@
 (require "pcf-list.rkt")
 
 (define-language
-  #:module-name   project1/VPCF
-  #:reductions    (->value)
-  #:grammar       VPCF
+  #:module-name   project1/NPCF
+  #:reductions    (->name)
+  #:grammar       NPCF
   #:defn-pattern  (def (x_1 T_1) e_1)
-  #:type-judgment ⊢_vp)
+  #:type-judgment ⊢_np)

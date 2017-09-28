@@ -3,6 +3,8 @@
 ; (def (ones (List Num)) (cons 1 (cons 2 (cons 3 (nil Num)))))
 
 (def (x Num) 1)
+#;
+(def (y (List Num)) (nil Num))
 
 (def (y (List Num)) (cons 1 (nil Num)))
 #;
@@ -14,4 +16,8 @@
 #;
 (add1* (cons (+ x 22) y))
 
-x
+#;
+(cons x 1)
+
+(cons x y)
+

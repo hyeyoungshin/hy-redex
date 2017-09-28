@@ -1,0 +1,1 @@
+("6.9" ("ec9717a26255be2bf867ab736cc931686ceca561" . "115798f61725c29b56fad0b1849b322ba4518e2a") (collects #"project1" #"VPCF.rkt") (collects #"racket" #"runtime-config.rkt"))
