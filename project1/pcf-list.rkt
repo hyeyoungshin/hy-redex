@@ -476,6 +476,115 @@
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on NPCF
 (module+ test
+  #; 
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (def (add1* (→ (List Num) (List Num)))
+                                   (λ (l (List Num))
+                                     (if0 (nil? l)
+                                          (nil Num)
+                                          (cons (+ (fst l) 1) (add1* (rst l))))))
+                                   (fst (cons (+ 1 (fst ones)) y))) T) T) ;;to test having add1* definition is a problem => YES
+
+  ;; to test if having a (very simple) funtion definition is a problem => NO
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (def (add1 (→ Num Num)) (λ (x Num) (+ 1 x)))
+                                 (add1 2)) T) T)
+
+  ;; to test if having a recursive funtion definition is a problem => YES
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (def (fib (→ Num Num) (λm. (if0 m
+                                                                 0
+                                                                 (if0 (- m 1)
+                                                                      1
+                                                                      (+ (fib (- x 1)) (fib (- x 2))))))))
+                                 (fib 4)) T) T)
+
+  #; 
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (def (add1* (→ (List Num) (List Num)))
+                                   (λ (l (List Num))
+                                     (if0 (nil? l)
+                                          (nil Num)
+                                          (cons (+ (fst l) 1) (add1* (rst l))))))
+                                   (add1* y)) T) T) ;; to test using add1* definition is a problem => MAYBE
+  #;
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (def (add1* (→ (List Num) (List Num)))
+                                   (λ (l (List Num))
+                                     (if0 (nil? l)
+                                          (nil Num)
+                                          (cons (+ (fst l) 1) (add1* (rst l))))))
+                                 (cons (+ 1 (fst ones)) y)) T) T)
+  #;
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (def (add1* (→ (List Num) (List Num)))
+                                   (λ (l (List Num))
+                                     (if0 (nil? l)
+                                          (nil Num)
+                                          (cons (+ (fst l) 1) (add1* (rst l))))))
+                                 (fst ones)) T) T)
+
+  #;
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (def (add1* (→ (List Num) (List Num)))
+                                   (λ (l (List Num))
+                                     (if0 (nil? l)
+                                          (nil Num)
+                                          (cons (+ (fst l) 1) (add1* (rst l))))))
+                                 (+ x 1)) T) T)
+  
+  ;; to test ⊢_np is producing ANY types => YES
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (+ x 1)) T) T)
+
+  ;; to test judgment for infinite list => FINE
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 ones) T) T) 
+
+  ;; to test using infinite list is a problem => NO
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                 (def (y (List Num)) (cons 1 (nil Num)))
+                                 (def (ones (List Num)) (cons 1 ones))
+                                 (fst ones)) T) T)
+  ;; to test cons with infinite list is a problem => NO
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                (def (y (List Num)) (cons 1 (nil Num)))
+                                (def (ones (List Num)) (cons 1 ones))
+                                (fst (cons (fst ones) y))) T) T)
+
+  ;; to test having cons "e" e is a problem => NO
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                (def (y (List Num)) (cons 1 (nil Num)))
+                                (def (ones (List Num)) (cons 1 ones))
+                                (cons (+ 1 (fst ones)) y)) T) T)
+
+  ;; to test having more than two definition is a problem => NO
+  (judgment-holds (⊢_np · (prog (def (x Num) 1)
+                                (def (y (List Num)) (cons 1 (nil Num)))
+                                (def (ones (List Num)) (cons 1 ones))
+                                (def (z Bool) tt)
+                                (fst (cons (+ 1 (fst ones)) y))) T) T)
+
+  
+  
   (chk
    #:t (judgment-holds (⊢_np · (prog (fst (cons (+ 1 1) (cons 1 (nil Num))))) Num))
    #:t (redex-match? NPCF ((fix (λ (x (→ Num Num)) x)) 1))
