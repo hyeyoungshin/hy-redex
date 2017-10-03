@@ -19,10 +19,5 @@
 #;
 (cons x 1)
 
-#;
 (cons x y)
-
-(fst (cons (+ 1 (fst y)) y))
-
-
 

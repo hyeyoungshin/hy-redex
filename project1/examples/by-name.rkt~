@@ -9,7 +9,7 @@
          (nil Num)
          (cons (+ (fst l) 1) (add1* (rst l))))))
 
-(fst ones)
+;(fst ones)
 ;; expected 1
 ;; returns 1
 
@@ -17,7 +17,7 @@
 ;; expected (cons 2 (cons 1 (nil Num))) <= wrong expectation
 ;; returns '(cons (+ 1 (fst ones)) y)
 
-;(fst (cons (+ 1 (fst ones)) y))
+(fst (cons (+ 1 (fst ones)) y))
 ;; expected 2
 ;; returns 2
 
