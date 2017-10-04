@@ -41,7 +41,7 @@
      ;;d bug!!!!!!!!
      (λ (x T) e)
      (e e)
-     (fix e)
+     ;;(fix e) no need we have recursive defs
      (cons e e)
      (fst e)
      (rst e)
@@ -58,7 +58,7 @@
      n
      (λ (x T) e)
      (nil T)
-     (fix v)
+     ;;(fix v)
      (err T string))
   ;; Numbers
   (n number)
@@ -189,6 +189,7 @@
    ----------------------------------------------------- "T-VAR" 
    (⊢_e (Γ (x T) ... (x_1 T_1) (x_!_1 T_2) ...) x_1 T_1)]
 
+  #;
   [(⊢_e Γ e_1 (→ T_1 T_1))
    --------------------- "T-FIX"
    (⊢_e Γ (fix e_1) T_1)]
@@ -251,7 +252,7 @@
   (E-value hole
            (E-value e)
            (v E-value)
-           (fix E-value)
+           ;;(fix E-value)
            (cons E-value e)
            (cons v E-value)
            (fst E-value)
@@ -280,12 +281,15 @@
    (--> (in-hole P-value ((λ (x T) e) v)) 
         (in-hole P-value (substitute e x v))  
         "EV-beta")
+   #;
    (--> (in-hole P-value (fix (λ (x T) e)))
         (in-hole P-value (mf-apply substitute e x (fix (λ (x T) e))))
         "EV-fix")
+   #;
    (--> (in-hole P-value ((fix (λ (x T) e)) v))
         (in-hole P-value (((λ (x T) e) (fix (λ (x T) e))) v))
         "EV-fixapp")
+   
    (--> (in-hole P-value (fst (cons v_1 v_2)))
         (in-hole P-value v_1)
         "EV-fst")
@@ -388,7 +392,7 @@
   (P-name (prog d ... E-name))
   (E-name hole
           (E-name e)
-          (fix E-name)
+          ;;(fix E-name)
           (fst E-name)
           (rst E-name)
           (cons? E-name)
@@ -415,12 +419,15 @@
    (--> (in-hole P-name ((λ (x T) e_1) e_2))
         (in-hole P-name (mf-apply substitute e_1 x e_2))
         "EN-beta")
+   #;
    (--> (in-hole P-name (fix (λ (x T) e)))
         (in-hole P-name (mf-apply substitute e x (fix (λ (x T) e))))
         "EN-fix")
+   #;
    (--> (in-hole P-name ((fix (λ (x T) e)) v))
         (in-hole P-name (((λ (x T) e) (fix (λ (x T) e))) v))
         "EN-fixapp")
+   
    (--> (in-hole P-name (fst (cons e_1 e_2)))
         (in-hole P-name e_1)
         "EN-fst")
@@ -498,11 +505,11 @@
   (judgment-holds (⊢_np · (prog (def (x Num) 1)
                                  (def (y (List Num)) (cons 1 (nil Num)))
                                  (def (ones (List Num)) (cons 1 ones))
-                                 (def (fib (→ Num Num) (λm. (if0 m
+                                 (def (fib (→ Num Num)) (λ (m Num) (if0 m
                                                                  0
                                                                  (if0 (- m 1)
                                                                       1
-                                                                      (+ (fib (- x 1)) (fib (- x 2))))))))
+                                                                      (+ (fib (- x 1)) (fib (- x 2)))))))
                                  (fib 4)) T) T)
 
   #; 
