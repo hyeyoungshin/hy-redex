@@ -350,10 +350,14 @@
    (judgment-holds (⊢_vp · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) T) T)
    (list (term (List Num)))
    #:t (redex-match? VPCF p (term (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y))))
+
+   #;
    #:t (redex-match? VPCF (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                  (λ (x Num) (if0 x tt (if0 (- x 1) ff (ie (- x 2)))))))
                                 ((fix xx) 7)))
+   #;
    #:t (redex-match? VPCF ((fix (λ (x (→ Num Num)) x)) 1))
+   
    #:t (redex-match? VPCF (in-hole P-value (+ n_1 n_2)) (term (prog (+ 2 3))))
    #:t (redex-match? VPCF p (term (prog (+ 2 3))))
    #:= (term (eval-value (prog (+ 2 3))))
@@ -374,6 +378,8 @@
    (term 3)
    #:= (term (eval-value (prog (def (x (List Bool)) (nil Bool)) (nil? x))))
    (term 0)
+
+   #;
    #:= (term (eval-value (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                 (λ (x Num)
                                                                   (if0 x tt
@@ -594,14 +600,20 @@
   
   (chk
    #:t (judgment-holds (⊢_np · (prog (fst (cons (+ 1 1) (cons 1 (nil Num))))) Num))
+
+   #;
    #:t (redex-match? NPCF ((fix (λ (x (→ Num Num)) x)) 1))
+   
    #:t (redex-match? NPCF (in-hole P-name (+ n_1 n_2)) (term (prog (+ 2 3))))
    #:t (redex-match? NPCF p (term (prog (+ 2 3))))
+
+   #;
    #:t (redex-match? NPCF p (term (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                 (λ (x Num)
                                                                   (if0 x tt
                                                                        (if0 (- x 1) ff (ie (- x 2)))))))
                                ((fix xx) 3))))
+   
    #:= (term (eval-name (prog (+ 2 3))))
    (term 5)
    #:= (term (eval-name (prog (- 2 3))))
@@ -620,12 +632,15 @@
    (term 3)
    #:= (term (eval-name (prog (def (x (List Bool)) (nil Bool)) (nil? x))))
    (term 0)
+
+   #;
    #:= (term (eval-name (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                 (λ (x Num)
                                                                   (if0 x tt
                                                                      (if0 (- x 1) ff (ie (- x 2)))))))
                              ((fix xx) 3))))
    (term ff)
+   
    #:= (term (eval-name (prog (fst (nil Bool)))))
    (term (err Bool "fst of nil"))
    ))
