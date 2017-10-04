@@ -19,8 +19,10 @@
 
 
 ;; ---------------------------------------------------------------------------------------------------
-;; dependencies 
-(require redex/reduction-semantics)
+;; dependencies
+
+;(require redex/reduction-semantics)
+(require redex)
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; implementation 
@@ -41,7 +43,7 @@
      ;;d bug!!!!!!!!
      (λ (x T) e)
      (e e)
-     ;;(fix e) no need we have recursive defs
+     (fix e) 
      (cons e e)
      (fst e)
      (rst e)
@@ -58,7 +60,7 @@
      n
      (λ (x T) e)
      (nil T)
-     ;;(fix v)
+     (fix v)
      (err T string))
   ;; Numbers
   (n number)
@@ -189,7 +191,7 @@
    ----------------------------------------------------- "T-VAR" 
    (⊢_e (Γ (x T) ... (x_1 T_1) (x_!_1 T_2) ...) x_1 T_1)]
 
-  #;
+  
   [(⊢_e Γ e_1 (→ T_1 T_1))
    --------------------- "T-FIX"
    (⊢_e Γ (fix e_1) T_1)]
@@ -252,7 +254,7 @@
   (E-value hole
            (E-value e)
            (v E-value)
-           ;;(fix E-value)
+           (fix E-value)
            (cons E-value e)
            (cons v E-value)
            (fst E-value)
@@ -281,11 +283,11 @@
    (--> (in-hole P-value ((λ (x T) e) v)) 
         (in-hole P-value (substitute e x v))  
         "EV-beta")
-   #;
+   
    (--> (in-hole P-value (fix (λ (x T) e)))
         (in-hole P-value (mf-apply substitute e x (fix (λ (x T) e))))
         "EV-fix")
-   #;
+   
    (--> (in-hole P-value ((fix (λ (x T) e)) v))
         (in-hole P-value (((λ (x T) e) (fix (λ (x T) e))) v))
         "EV-fixapp")
@@ -332,7 +334,7 @@
         (prog (def (x_1 T_1) v_1) ... (def (x T) v) (def (x_2 T_2) v_2) ...
            (in-hole E-value v))
         "EV-def")
-  )
+   )
  )
 
 (define-metafunction VPCF
@@ -345,17 +347,20 @@
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on VPCF
 (module+ test
+  (traces ->value (term (prog (+ 1 1))))
+  (stepper ->value (term (prog (+ 1 1))))
+ 
   (chk
    #:= 
    (judgment-holds (⊢_vp · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) T) T)
    (list (term (List Num)))
    #:t (redex-match? VPCF p (term (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y))))
 
-   #;
+   
    #:t (redex-match? VPCF (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                  (λ (x Num) (if0 x tt (if0 (- x 1) ff (ie (- x 2)))))))
                                 ((fix xx) 7)))
-   #;
+   
    #:t (redex-match? VPCF ((fix (λ (x (→ Num Num)) x)) 1))
    
    #:t (redex-match? VPCF (in-hole P-value (+ n_1 n_2)) (term (prog (+ 2 3))))
@@ -379,7 +384,6 @@
    #:= (term (eval-value (prog (def (x (List Bool)) (nil Bool)) (nil? x))))
    (term 0)
 
-   #;
    #:= (term (eval-value (prog (def (xx (→ (→ Num Bool) Num)) (λ (ie (→ Num Bool))
                                                                 (λ (x Num)
                                                                   (if0 x tt
@@ -398,7 +402,7 @@
   (P-name (prog d ... E-name))
   (E-name hole
           (E-name e)
-          ;;(fix E-name)
+          (fix E-name)
           (fst E-name)
           (rst E-name)
           (cons? E-name)
@@ -425,11 +429,9 @@
    (--> (in-hole P-name ((λ (x T) e_1) e_2))
         (in-hole P-name (mf-apply substitute e_1 x e_2))
         "EN-beta")
-   #;
    (--> (in-hole P-name (fix (λ (x T) e)))
         (in-hole P-name (mf-apply substitute e x (fix (λ (x T) e))))
         "EN-fix")
-   #;
    (--> (in-hole P-name ((fix (λ (x T) e)) v))
         (in-hole P-name (((λ (x T) e) (fix (λ (x T) e))) v))
         "EN-fixapp")
