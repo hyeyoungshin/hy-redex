@@ -6,6 +6,19 @@
                                        0
                                        (if0 (- m 1)
                                             1
-                                            (+ (fib (- x 1)) (fib (- x 2)))))))
+                                            (+ (fib (- m 1)) (fib (- m 2)))))))
 
-(fib 2)
+fib
+
+;(fib 0)
+;; expected (0 : Num)
+;; returned (0 :)
+
+
+;(fib 1)
+;; expected (1 : Num)
+;; returned (1 :)
+
+;(fib 2)
+;; expected (1 : Num)
+;; returned nothing infinite loop or extremely slow (is it because it is not tail recursive?)
