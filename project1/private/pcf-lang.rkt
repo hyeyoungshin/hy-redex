@@ -37,7 +37,7 @@
     (define-syntax (top-interaction stx)
       (syntax-case stx ()
         [(_ . e)
-         #`(#%top-interaction . (run-all grammar-id reduction (prog ,@definitions e)))]))
+         #`(#%top-interaction . (run-all grammar-id reduction (prog definitions e)))]))
 
     (define-syntax (module-begin stx)
       (syntax-parse stx
