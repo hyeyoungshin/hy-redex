@@ -7,5 +7,5 @@
   #:module-name   project1/VPCF-tlc
   #:reductions    (->value)
   #:grammar       VPCF
-  #:defn-pattern  (def x_1 : T_1 v_1)
+  #:defn-pattern  (def x_1 : T_1 e_1)
   #:type-judgment ⊢_vp)
