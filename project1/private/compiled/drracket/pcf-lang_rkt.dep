@@ -1,1 +1,0 @@
-("6.9" ("8da855d5fab893d4b6e99480420e17f9e5efba17" . "e78e6d12956215f7457cf15ccb80ea5339881e45") (collects #"project1" #"pcf-list.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))
