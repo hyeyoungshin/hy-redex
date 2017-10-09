@@ -69,7 +69,7 @@
             (with-module-reading-parameterization
                 (lambda ()
                   (read (open-input-string (send (send drr-window get-definitions-text) get-text))))))
-          (stepper
+          ((dynamic-require 'redex/gui 'stepper)
            (dynamic-require 'lang-module-name 'reduction)
            ;; the next step should reuse the above pattern 
            (match mod
@@ -77,17 +77,18 @@
                  (#%module-begin
                   definitions
                   ,defs (... ...))) (term (prog ,@defs))])))
-        ;; -- in -- 
+        ;; -- in --
         (case key
-          [(drracket:toolbar-buttons)
+          [(drracket:toolbar-buttons) ;; this is a symbol, see docs 
            (list
             (list
              "Redex Stepper"
              (make-object bitmap% 16 16) ; a 16 x 16 white square
              add-stepper-button-to-window))]
-          [else default]))
+          [else
+           default]))
       
-      (require racket/class racket/match redex syntax/modread racket/draw))))
+      (require racket/class racket/match redex/reduction-semantics syntax/modread racket/draw))))
 
 (require "../pcf-list.rkt")
 
@@ -96,4 +97,5 @@
   #:module-name   project1/VPCF
   #:reductions    (->value)
   #:grammar       PCF-list
-  #:defn-pattern  (defun (x_1 T_1) e_1))
+  #:defn-pattern  (defun (x_1 T_1) e_1)
+  #:type-judgment ⊢_p)
