@@ -1,10 +1,11 @@
 #lang project1/VPCF
 
 (def (y Num) 2)
+(def (add2 (→ Num Num)) (λ (y Num) (+ y 2)))
 
 ;(def (x (→ (→ Num Num) Num)) (λ (t Num) (λ (f Num) t)))
 
-
+(add2 y)
 
 ;; test 1 -----------------------------------
 ;y
@@ -19,7 +20,7 @@
 
 
 ;; test 3 -----------------------------------
-(λ (t Num) (λ (f Num) t))
+;(λ (t Num) (λ (f Num) t))
 ;; expected '((λ (t Num) (λ (f Num) t)) :(→ Num (→ Num Num)))
 ;; returned '((λ (t Num) (λ (f Num) t)) :) when the second definition is not commented out
 
