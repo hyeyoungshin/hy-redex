@@ -24,11 +24,12 @@
 
 ;(require redex/reduction-semantics)
 (require redex)
+(module+ test (require chk))
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Syntax of PCF-list
 
-(define-language PCF-list 
+(define-language PCF-list
   ;; Types
   (T ::= Bool
          Num
@@ -43,7 +44,6 @@
          x
          (λ x : T e)
          (e e)
-         ;;(fix e) we don't need fix?
          (cons e e)
          (fst e)
          (rst e)
@@ -78,11 +78,11 @@
 (define-judgment-form PCF-list
   #:mode (⊢_p I I O)
   #:contract (⊢_p Γ p T)
-  [(⊢_e ((x_1 : T_1) ... any_1 ...) v_1 T_1)
+  [(⊢_e ((x_1 : T_1) ... ) v_1 T_1)
    ...
-   (⊢_e ((x_1 : T_1) ... any_1 ...) e T)
+   (⊢_e ((x_1 : T_1) ... ) e T)
    ------------------------------------------------------ "T-PRO"
-   (⊢_p (any_1 ...) (prog (def (name x_1 x_!_1) : T_1 v_1) ... e) T)]
+   (⊢_p () (prog (def (name x_1 x_!_1) : T_1 v_1) ... e) T)]
 )
 
 
@@ -90,22 +90,18 @@
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on PCF-list programs
 
+#;
 (module+ test
-  ;(judgement-holds Γ (x Num) ⊢_p x Num
-  (require chk)
-
-  ;(define def1 (term (x : Num)))
-  ;(define def2 (term (y : Num)))
-  ;(define def3 (term (z : (List Num))))
-  ;(define example1 (term (prog (def x : Num 2) (def y : Num 3) (+ x y))))
-  ;(test-equal (judgment-holds (⊢_p (),example1 Num)) #t)
-  ;(test-equal (judgment-holds (⊢_e (,def1 ,def2) 2 Num)) #t)
-  ;(test-equal (judgment-holds (⊢_e (,def1 ,def2) 3 Num)) #t)
-  ;(test-equal (judgment-holds (⊢_e ((y : Num) (x : Num)) x Num)) #t)
-  ;(test-equal (judgment-holds (⊢_e (,def1 ,def2) (+ x y) Num)) #t)
-  ;(test-equal (judgment-holds (⊢_e (,def1 ,def3) (cons x z) (List Num))) #t)
-
-  
+  (define def1 (term (x : Num)))
+  (define def2 (term (y : Num)))
+  (define def3 (term (z : (List Num))))
+  (define example1 (term (prog (def x : Num 2) (def y : Num 3) (+ x y))))
+  (test-equal (judgment-holds (⊢_p (),example1 Num)) #t)
+  (test-equal (judgment-holds (⊢_e (,def1 ,def2) 2 Num)) #t)
+  (test-equal (judgment-holds (⊢_e (,def1 ,def2) 3 Num)) #t)
+  (test-equal (judgment-holds (⊢_e ((y : Num) (x : Num)) x Num)) #t)
+  (test-equal (judgment-holds (⊢_e (,def1 ,def2) (+ x y) Num)) #t)
+  (test-equal (judgment-holds (⊢_e (,def1 ,def3) (cons x z) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e () (nil Num) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e () (cons 2 (nil Num)) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e () (cons 2 (cons 2 (nil Num))) (List Num))) #t)
@@ -117,7 +113,7 @@
   (test-equal (judgment-holds (⊢_e () (fst (nil Num)) Num)) #t)
   (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (nil Num)) (cons x y)) (List Num)))
               #t)
-  #;(test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
+  (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
               #t)
   (chk
    ;; -----------------------------------------------------------------------------------------------------------
@@ -138,7 +134,7 @@
    #:t (redex-match? PCF-list n (term 2))
    #:t (redex-match? PCF-list p (term (prog (def x : Num 2) 2)))
    #:t (redex-match? PCF-list p (term (prog (def x : Num 2) x)))
-   ;#:t (redex-match? PCF-list p example1)
+   #:t (redex-match? PCF-list p example1)
    #:t (redex-match? PCF-list e (term (nil Num)))
    #:t (redex-match? PCF-list p (term (prog (def x : Num 2) (def z : (List Num) (nil Num)) (cons x z))))
    #:= (judgment-holds (⊢_e ((x : Num)) x T) T)
@@ -154,9 +150,9 @@
    #:= 
    (judgment-holds (⊢_p () (prog (def x : Num 2) (+ x 1)) T) T)
    (list (term Num))
-   ;#:= 
-   ;(judgment-holds (⊢_p () ,example1 Num) Num)
-   ;(list (term Num))
+   #:= 
+   (judgment-holds (⊢_p () ,example1 Num) Num)
+   (list (term Num))
    #:= 
    (judgment-holds (⊢_p () (prog (def x : Num 2) (def y : Bool tt) y) T) T)
    (list (term Bool))
@@ -175,78 +171,72 @@
   #:mode (⊢_e I I O)
   #:contract (⊢_e Γ e T) 
   [--------------- "T-TRUE"
-   (⊢_e (any_1 ...) tt Bool)]
+   (⊢_e ((x_1 : T_1) ...) tt Bool)]
 
   [--------------- "T-FALSE"
-   (⊢_e (any_1 ...) ff Bool)]
+   (⊢_e ((x_1 : T_1) ...) ff Bool)]
 
   [------------- "T-NUM"
-   (⊢_e (any_1 ...) n Num)]
+   (⊢_e ((x_1 : T_1) ...) n Num)]
 
-  ;; (x_3 T_3) ... is preserving previous typing
-  [(⊢_e ((x_1 : T_1) any_1 ...) e_2 T_2)
+  [(⊢_e ((x_1 : T_1) ... (x : T) (x_n : T_n) ...) e_2 T_2)
    ----------------------------------------------------- "T-ABS"
-   (⊢_e (any_1 ...) (λ x_1 : T_1 e_2) (→ T_1 T_2))]
+   (⊢_e ((x_1 : T_1) ... (x_n : T_n) ...) (λ x : T e_2) (→ T T_2))]
   
-  [(⊢_e (any_1 ...) e_1 (→ T_1 T_2))
-   (⊢_e (any_1 ...) e_2 T_1)
+  [(⊢_e ((x_1 : T_1) ...) e_1 (→ T_3 T_4))
+   (⊢_e ((x_1 : T_1) ...) e_2 T_3)
    ---------------------- "T-APP"
-   (⊢_e (any_1 ...) (e_1 e_2) T_2)]
+   (⊢_e ((x_1 : T_1) ...) (e_1 e_2) T_4)]
 
   [
    ----------------------------------------------------- "T-VAR" 
-   (⊢_e ((x : T) ... (x_1 : T_1) (x_!_1 : T_2) ...) x_1 T_1)]
-
-  #;
-  [(⊢_e (any_1 ...) e_1 (→ T_1 T_1))
-   --------------------- "T-FIX"
-   (⊢_e (any_1 ...) (fix e_1) T_1)]
+   (⊢_e ((x_1 : T_1) ... (x : T) (x_n : T_n) ...) x T)]
   
-  [(⊢_e (any_1 ...) e_1 Num)
-   (⊢_e (any_1 ...) e_2 Num)
+  [(⊢_e ((x_1 : T_1) ...) e_1 Num)
+   (⊢_e ((x_1 : T_1) ...) e_2 Num)
    ----------------------- "T-SUM"
-   (⊢_e (any_1 ...) (+ e_1 e_2) Num)]
+   (⊢_e ((x_1 : T_1) ...) (+ e_1 e_2) Num)]
 
-  [(⊢_e (any_1 ...) e_1 Num)
-   (⊢_e (any_1 ...) e_2 Num)
+  [(⊢_e ((x_1 : T_1) ...) e_1 Num)
+   (⊢_e ((x_1 : T_1) ...) e_2 Num)
    ----------------------- "T-SUB"
-   (⊢_e (any_1 ...) (- e_1 e_2) Num)]
+   (⊢_e ((x_1 : T_1) ...) (- e_1 e_2) Num)]
 
-  [(⊢_e (any_1 ...) e_1 T_1)
-   (⊢_e (any_1 ...) e_2 (List T_1))
+  [(⊢_e ((x_1 : T_1) ...) e_1 T)
+   (⊢_e ((x_1 : T_1) ...) e_2 (List T))
    --------------------------------- "T-CONS"
-   (⊢_e (any_1 ...) (cons e_1 e_2) (List T_1))]
+   (⊢_e ((x_1 : T_1) ...) (cons e_1 e_2) (List T))]
 
-  [(⊢_e (any_1 ...) e_1 (List T_1))
+  [(⊢_e ((x_1 : T_1) ...) e_1 (List T))
    --------------------- "T-FST"
-   (⊢_e (any_1 ...) (fst e_1) T_1)]
+   (⊢_e ((x_1 : T_1) ...) (fst e_1) T)]
 
-  [(⊢_e (any_1 ...) e_1 (List T_1))
+  [(⊢_e ((x_1 : T_1) ...) e_1 (List T))
    ---------------------------- "T-RST"
-   (⊢_e (any_1 ...) (rst e_1) (List T_1))]
+   (⊢_e ((x_1 : T_1) ...) (rst e_1) (List T))]
 
-  [(⊢_e (any_1 ...) e_1 T_1)
-   (⊢_e (any_1 ...) e_2 (List T_1))
+  [(⊢_e ((x_1 : T_1) ...) e_1 T)
+   (⊢_e ((x_1 : T_1) ...) e_2 (List T))
    ---------------------------- "T_CONS?"
-   (⊢_e (any_1 ...) (cons? (cons e_1 e_2)) Num)]
+   (⊢_e ((x_1 : T_1) ...) (cons? (cons e_1 e_2)) Num)]
 
-  [(⊢_e (any_1 ...) e_1 (List T))
+  [(⊢_e ((x_1 : T_1) ...) e_1 (List T))
    ----------------------- "T-NIL?"
-   (⊢_e (any_1 ...) (nil? e_1) Num)]
+   (⊢_e ((x_1 : T_1) ...) (nil? e_1) Num)]
 
   [
    ------------------------------ "T-NIL"
-   (⊢_e (any_1 ...) (nil T_1) (List T_1))]
+   (⊢_e ((x_1 : T_1) ...) (nil T) (List T))]
 
-  [(⊢_e (any_1 ...) e_1 Num)
-   (⊢_e (any_1 ...) e_2 T)
-   (⊢_e (any_1 ...) e_3 T)
+  [(⊢_e ((x_1 : T_1) ...) e_1 Num)
+   (⊢_e ((x_1 : T_1) ...) e_2 T)
+   (⊢_e ((x_1 : T_1) ...) e_3 T)
    ----------------------------- "T-IF0"
-   (⊢_e (any_1 ...) (if0 e_1 e_2 e_3) T)]
+   (⊢_e ((x_1 : T_1) ...) (if0 e_1 e_2 e_3) T)]
 
   [
    -------------------------- "T-ERR"
-   (⊢_e (any_1 ...) (err T string) T)]
+   (⊢_e ((x_1 : T_1) ...) (err T string) T)]
   )
 
 
@@ -259,9 +249,6 @@
   (E-value ::= hole
                (E-value e)
                (v E-value)
-               #;
-               (fix E-value)
-               
                (cons E-value e)
                (cons v E-value)
                (fst E-value)
@@ -291,15 +278,6 @@
    (--> (in-hole P-value ((λ x : T e) v)) 
         (in-hole P-value (substitute e x v))  
         "EV-BETA")
-   #;
-   (--> (in-hole P-value (fix (λ x : T e)))
-        (in-hole P-value (mf-apply substitute e x (fix (λ x : T e))))
-        "EV-FIX")
-   #;
-   (--> (in-hole P-value ((fix (λ x : T e)) v))
-        (in-hole P-value (((λ x : T e) (fix (λ x : T e))) v))
-        "EV-FIX-APP")
-   
    (--> (in-hole P-value (fst (cons v_1 v_2)))
         (in-hole P-value v_1)
         "EV-FST")
@@ -364,15 +342,8 @@
    (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) T) T)
    (list (term (List Num)))
    #:t (redex-match? VPCF p (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y))))
-   
-   ;#:t (redex-match? VPCF (prog (def xx : (→ (→ Num Bool) Num) (λ ie : (→ Num Bool)
-   ;                                                              (λ x : Num (if0 x tt (if0 (- x 1) ff (ie (- x 2)))))))
-   ;                             ((fix xx) 7)))
-   
-   ;#:t (redex-match? VPCF ((fix (λ (x (→ Num Num)) x)) 1))
-   
+   #:t (redex-match? VPCF p (term (prog (+ (+ 2 3) 5))))
    #:t (redex-match? VPCF (in-hole P-value (+ n_1 n_2)) (term (prog (+ 2 3))))
-   #:t (redex-match? VPCF p (term (prog (+ 2 3))))
    #:= (term (eval-value (prog (+ 2 3))))
    (term 5)
    #:= (term (eval-value (prog (- 2 3))))
@@ -439,15 +410,6 @@
    (--> (in-hole P-name ((λ x : T e_1) e_2))
         (in-hole P-name (mf-apply substitute e_1 x e_2))
         "EN-BETA")
-   #;
-   (--> (in-hole P-name (fix (λ x : T e)))
-        (in-hole P-name (mf-apply substitute e x (fix (λ x : T e))))
-        "EN-FIX")
-   #;
-   (--> (in-hole P-name ((fix (λ x : T e)) v))
-        (in-hole P-name (((λ x : T e) (fix (λ x : T e))) v))
-        "EN-FIX-APP")
-   
    (--> (in-hole P-name (fst (cons e_1 e_2)))
         (in-hole P-name e_1)
         "EN-FST")
@@ -507,28 +469,28 @@
 
 (module+ test
   #; 
-  (judgment-holds (⊢_np () (prog (def x : Num 1)
-                                 (def y : (List Num) (cons 1 (nil Num)))
-                                 (def ones : (List Num) (cons 1 ones))
-                                 (def add1* : (→ (List Num) (List Num))
-                                   (λ l : (List Num)
-                                     (if0 (nil? l)
-                                          (nil Num)
-                                          (cons (+ (fst l) 1) (add1* (rst l))))))
-                                   (fst (cons (+ 1 (fst ones)) y))) T) T) ;;to test having add1* definition is a problem => YES
+  (judgment-holds (() ⊢_np (prog (def x : Num 1)
+                              (def y : (List Num) (cons 1 (nil Num)))
+                              (def ones : (List Num) (cons 1 ones))
+                              (def add1* : (→ (List Num) (List Num))
+                                (λ l : (List Num)
+                                  (if0 (nil? l)
+                                       (nil Num)
+                                       (cons (+ (fst l) 1) (add1* (rst l))))))
+                                (fst (cons (+ 1 (fst ones)) y))) T) T) ;;to test having add1* definition is a problem => YES
 
   ;; to test if having a (very simple) funtion definition is a problem => NO
   (judgment-holds (⊢_np () (prog (def x : Num 1)
-                                 (def y : (List Num) (cons 1 (nil Num)))
-                                 (def ones : (List Num) (cons 1 ones))
-                                 (def add1 : (→ Num Num) (λ x : Num (+ 1 x)))
-                                 (add1 2)) T) T)
+                              (def y : (List Num) (cons 1 (nil Num)))
+                              (def ones : (List Num) (cons 1 ones))
+                              (def add1 : (→ Num Num) (λ x : Num (+ 1 x)))
+                              (add1 2)) T) T)
 
   ;; to test if having a recursive funtion definition is a problem => YES
   (judgment-holds (⊢_np () (prog (def x : Num 1)
-                                 (def y : (List Num) (cons 1 (nil Num)))
-                                 (def ones : (List Num) (cons 1 ones))
-                                 (def fib : (→ Num Num) (λ m : Num (if0 m
+                              (def y : (List Num) (cons 1 (nil Num)))
+                              (def ones : (List Num) (cons 1 ones))
+                              (def fib : (→ Num Num) (λ m : Num (if0 m
                                                                  0
                                                                  (if0 (- m 1)
                                                                       1
