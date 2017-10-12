@@ -334,7 +334,7 @@
         (prog (def x_1 : T_1 v_1) ... (def x : T v) (def x_n : T_n v_n) ...
            (in-hole E-value v))
         "EV-DEF")
-   )
+  )
  )
 
 (define-metafunction VPCF
@@ -585,9 +585,6 @@
   
   (chk
    #:t (judgment-holds (⊢_np () (prog (fst (cons (+ 1 1) (cons 1 (nil Num))))) Num))
-
-   ;#:t (redex-match? NPCF ((fix (λ x : (→ Num Num) x)) 1))
-   
    #:t (redex-match? NPCF (in-hole P-name (+ n_1 n_2)) (term (prog (+ 2 3))))
    #:t (redex-match? NPCF p (term (prog (+ 2 3))))
    #:= (term (eval-name (prog (+ 2 3))))

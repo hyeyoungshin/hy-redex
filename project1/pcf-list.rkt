@@ -40,7 +40,6 @@
   ;; Terms
   (e v  
      x
-     ;;d bug!!!!!!!!
      (λ (x T) e)
      (e e)
      (fix e) 
@@ -114,7 +113,7 @@
   (test-equal (judgment-holds (⊢_e · (fst (nil Num)) Num)) #t)
   (test-equal (judgment-holds (⊢_p · (prog (def (x Num) 1) (def (y (List Num)) (nil Num)) (cons x y)) (List Num)))
               #t)
-  #;(test-equal (judgment-holds (⊢_p · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) (List Num)))
+  (test-equal (judgment-holds (⊢_p · (prog (def (x Num) 1) (def (y (List Num)) (cons 1 (nil Num))) (cons x y)) (List Num)))
               #t)
   (chk
    #:t (redex-match? PCF-list (x_!_1 ...) (term (x y z)))
