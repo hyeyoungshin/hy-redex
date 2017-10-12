@@ -78,9 +78,9 @@
 (define-judgment-form PCF-list
   #:mode (⊢_p I I O)
   #:contract (⊢_p Γ p T)
-  [(⊢_e ((x_1 : T_1) ... ) v_1 T_1)
+  [(⊢_e ((x_1 : T_1) ...) v_1 T_1)
    ...
-   (⊢_e ((x_1 : T_1) ... ) e T)
+   (⊢_e ((x_1 : T_1) ...) e T)
    ------------------------------------------------------ "T-PRO"
    (⊢_p () (prog (def (name x_1 x_!_1) : T_1 v_1) ... e) T)]
 )
@@ -90,8 +90,7 @@
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on PCF-list programs
 
-#;
-(module+ test
+(module+ test 
   (define def1 (term (x : Num)))
   (define def2 (term (y : Num)))
   (define def3 (term (z : (List Num))))
@@ -111,14 +110,29 @@
   (test-equal (judgment-holds (⊢_e () (rst (cons 2 (nil Num))) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e () (rst (nil Num)) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e () (fst (nil Num)) Num)) #t)
+  (test-equal (judgment-holds (⊢_e () (cons 1 (nil Num)) (List Num))) #t)
   (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (nil Num)) (cons x y)) (List Num)))
               #t)
+  #;
   (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
               #t)
+  ;; A bug ------------------------------------------------------------------------------------------------------
+  #;
+  (test-equal (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)))
+              (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons 1 (cons 1 (nil Num))))))
+  ;; ------------------------------------------------------------------------------------------------------------
+  
+  #;
+  (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
+              #t)
+  
+
   (chk
+   
    ;; -----------------------------------------------------------------------------------------------------------
    ;; Semantics of _!
    ;; Note that A #:! t test, where t is another test, represents the expectation that test t will fail.
+   
    #:t (redex-match? PCF-list (x_!_1 ...) (term (x y z)))
    #:! #:t (redex-match? PCF-list (x_!_1 ... x_!_1) (term ())) ;; expected to fail 
    #:t (redex-match? PCF-list (x_!_1 ... x_!_1) (term (x)))
@@ -315,9 +329,9 @@
    (--> (in-hole P-value (- n_1 n_2))
         (in-hole P-value ,(- (term n_1) (term n_2)))
         "EV-SUB")
-   (--> (prog (def x_1 : T_1 v_1) ... (def x : T v) (def x_2 : T_2 v_2) ...
+   (--> (prog (def x_1 : T_1 v_1) ... (def x : T v) (def x_n : T_n v_n) ...
            (in-hole E-value x))
-        (prog (def x_1 : T_1 v_1) ... (def x : T v) (def x_2 : T_2 v_2) ...
+        (prog (def x_1 : T_1 v_1) ... (def x : T v) (def x_n : T_n v_n) ...
            (in-hole E-value v))
         "EV-DEF")
    )
@@ -334,9 +348,8 @@
 ;; Tests on VPCF
 
 (module+ test
-  (traces ->value (term (prog (+ 1 1))))
-  (stepper ->value (term (prog (+ 1 1))))
-
+  (stepper ->value (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num)) (cons x y)))))
+  
   (chk
    #:= 
    (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) T) T)
@@ -362,13 +375,6 @@
    (term 3)
    #:= (term (eval-value (prog (def x : (List Bool) (nil Bool)) (nil? x))))
    (term 0)
-
-   ;#:= (term (eval-value (prog (def xx :(→ Num (→ Bool Num)) (λ ie : (→ Num Bool)
-   ;                                                             (λ x : Num
-   ;                                                               (if0 x tt
-   ;                                                                    (if0 (- x 1) ff (ie (- x 2)))))))
-   ;                            ((fix xx) 3))))
-   ;(term ff)
    ))
 
 
