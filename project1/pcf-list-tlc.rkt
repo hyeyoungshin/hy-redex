@@ -111,19 +111,31 @@
   (test-equal (judgment-holds (⊢_e () (rst (nil Num)) (List Num))) #t)
   (test-equal (judgment-holds (⊢_e () (fst (nil Num)) Num)) #t)
   (test-equal (judgment-holds (⊢_e () (cons 1 (nil Num)) (List Num))) #t)
+  (test-equal (judgment-holds (⊢_e ((x : (List Num))) x (List Num))) #t)
+  #;
+  (test-equal (judgment-holds (⊢_p ((x : (List Num))) (prog () x) (List Num))) #t)
+ 
+  (test-equal (judgment-holds (⊢_p () (prog (def x : Bool tt) x) Bool)) #t)
+  #; 
+  (test-equal (judgment-holds (⊢_p ((x : Num)) (prog (def x : Bool tt) x) Bool)) #t)
+  (test-equal (judgment-holds (⊢_e ((x : Bool)) x Bool)) #t)
+  (judgment-holds (⊢_e ((x : (List Bool)) (y : Num) (x : Num)) x T) T) 
+
+  #; ;; This may not even be allowed in my language
+  (judgment-holds (⊢_p ((x : Num)) (prog (def x : Bool tt) x) T) T)
+
+  (judgment-holds (⊢_p () (prog (def x : Bool tt) x) T) T)
+  (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (nil Num)) (cons x y)) T) T)
+  
+  (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 2 (nil Num))) (cons x y)) T) T)
+  (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : Num 2) (+ x y)) T) T)
+  (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 2 (nil Num))) (fst (cons x y))) T) T)
+ 
   (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (nil Num)) (cons x y)) (List Num)))
               #t)
-  #;
-  (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
+  (test-equal (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
               #t)
-  ;; A bug ------------------------------------------------------------------------------------------------------
-  #;
-  (test-equal (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)))
-              (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons 1 (cons 1 (nil Num))))))
-  ;; ------------------------------------------------------------------------------------------------------------
-  
-  #;
-  (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
+  (test-equal (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
               #t)
   
 
@@ -139,6 +151,7 @@
    #:t (redex-match? PCF-list (x_!_1 ... x_!_1) (term (x y z)))
    #:! #:t (redex-match? PCF-list (x_!_1 ...) (term (x y x))) ;; expected to fail
    #:t (redex-match? PCF-list ((name x_3 (x_!_1 ...)) (name x_2 x_!_1)) (term ((x y) z)))
+   #:t (redex-match? PCF-list (x_!_1 ... x x_!_1 ...) (term (x y x)))
    #:! #:t (redex-match? PCF-list ((name x_3 (x_!_1 ...)) (name x_2 x_!_1)) (term ((x y) x))) ;; expected to fail
    #:! #:t (redex-match? PCF-list ((name x_3 (x_!_1 ...)) (name x_2 x_!_1)) (term ((x x) z))) ;; expected to fail
    ;; -----------------------------------------------------------------------------------------------------------
@@ -204,7 +217,7 @@
 
   [
    ----------------------------------------------------- "T-VAR" 
-   (⊢_e ((x_1 : T_1) ... (x : T) (x_n : T_n) ...) x T)]
+   (⊢_e (((name x_1 x_!_1) : T_1) ... ((name x x_!_1) : T) ((name x_n x_!_1) : T_n) ...) x T)]
   
   [(⊢_e ((x_1 : T_1) ...) e_1 Num)
    (⊢_e ((x_1 : T_1) ...) e_2 Num)
@@ -348,19 +361,18 @@
 ;; Tests on VPCF
 
 (module+ test
-  (stepper ->value (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num)) (cons x y)))))
-  
-  (chk
-   #:= 
-   (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) T) T)
-   (list (term (List Num)))
-   #:t (redex-match? VPCF p (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y))))
-   #:t (redex-match? VPCF p (term (prog (+ (+ 2 3) 5))))
-   #:t (redex-match? VPCF (in-hole P-value (+ n_1 n_2)) (term (prog (+ 2 3))))
-   #:= (term (eval-value (prog (+ 2 3))))
-   (term 5)
-   #:= (term (eval-value (prog (- 2 3))))
-   (term -1)
+  (stepper ->value (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y))))
+   (chk
+    #:= 
+    (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) T) T)
+    (list (term (List Num)))
+    #:t (redex-match? VPCF p (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y))))
+    #:t (redex-match? VPCF p (term (prog (+ (+ 2 3) 5))))
+    #:t (redex-match? VPCF (in-hole P-value (+ n_1 n_2)) (term (prog (+ 2 3))))
+    #:= (term (eval-value (prog (+ 2 3))))
+    (term 5)
+    #:= (term (eval-value (prog (- 2 3))))
+    (term -1)
    #:= (term (eval-value (prog (def x : Num 2) (def y : Num 3) (+ x y))))
    (term 5)
    #:= (term (eval-value (prog (def x : Num 2) (def y : (List Num) (cons 3 (nil Num))) (cons x y))))
