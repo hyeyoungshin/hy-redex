@@ -361,11 +361,11 @@
 ;; Tests on VPCF
 
 (module+ test
-  (stepper ->value (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y))))
    (chk
-    #:= 
-    (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) T) T)
+    #:= (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) T) T)
     (list (term (List Num)))
+    #:= (judgment-holds (⊢_vp () (prog (def y : Num 2) (def add2 : (→ Num Num) (λ y : Num (+ y 2))) (add2 y)) T) T)
+    (list (term Num))
     #:t (redex-match? VPCF p (term (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y))))
     #:t (redex-match? VPCF p (term (prog (+ (+ 2 3) 5))))
     #:t (redex-match? VPCF (in-hole P-value (+ n_1 n_2)) (term (prog (+ 2 3))))
