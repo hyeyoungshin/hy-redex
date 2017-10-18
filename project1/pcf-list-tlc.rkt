@@ -36,9 +36,9 @@
          (→ T T)
          (List T))
   ;; Programs
-  (p ::= (prog d ... e))
+  (p ::= (prog (def (x_!_1 : T) v) ... e))
   ;; Defs
-  (d ::= (def x : T v))
+  ;(d ::= (def x : T v))
   ;; Terms
   (e ::= v  
          x
@@ -354,7 +354,12 @@
   eval-value : p -> v
   [(eval-value p)
    v
-   (where (prog d ... v) ,(first (apply-reduction-relation* ->value (term p))))])
+   (where (prog d ... v) ,(first (apply-reduction-relation* ->value (term p))))
+  (side-condition (type-checks-value? (term p)))])  
+
+(define (type-checks-value? p)
+  (not (null? (judgment-holds (⊢_vp () ,p T)
+                              T))))
 
 
 ;; ---------------------------------------------------------------------------------------------------
@@ -484,7 +489,9 @@
    v
    (where (prog d ... v) ,(first (apply-reduction-relation* ->name (term p))))])
 
-
+(define (type-checks-name? p)
+  (not (null? (judgment-holds (⊢_np () ,p T)
+                              T))))
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on NPCF
 
@@ -630,8 +637,11 @@
   [(different x_1 x_2) #t])
 
 
+
+
 ;; --------------------------------------------------------------------------------------------------------------------
 ;; Redex Random testing
+
 (define (progress-holds? e)
   (if (types? e)
       (or (v? e)
@@ -653,3 +663,5 @@
   (not (null? (apply-reduction-relation
                ->value
                (term ,e))))) ;;or wrap an expression in a program (term (prog (,e))) and check ⊢_e
+
+
