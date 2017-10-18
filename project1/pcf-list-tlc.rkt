@@ -361,7 +361,10 @@
 ;; Tests on VPCF
 
 (module+ test
+  (stepper ->value (term (prog (def x : Num 3) (def y : Num 2) (def x : Bool tt) x)))
    (chk
+    #:= (judgment-holds (⊢_vp () (prog (def x : Num 3) (def x : (List Num) (nil Num)) (cons x x)) T) T)
+    (list (term (List Num)))
     #:= (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) T) T)
     (list (term (List Num)))
     #:= (judgment-holds (⊢_vp () (prog (def y : Num 2) (def add2 : (→ Num Num) (λ y : Num (+ y 2))) (add2 y)) T) T)
