@@ -1,3 +1,4 @@
+
 #lang racket/base
 
 (require "private/pcf-lang.rkt")
@@ -8,4 +9,5 @@
   #:reductions    (->value)
   #:grammar       VPCF
   #:defn-pattern  (def (x_1 T_1) e_1)
+  #:gamma0        ·
   #:type-judgment ⊢_vp)

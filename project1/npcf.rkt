@@ -8,4 +8,5 @@
   #:reductions    (->name)
   #:grammar       NPCF
   #:defn-pattern  (def (x_1 T_1) e_1)
+  #:gamma0        ·
   #:type-judgment ⊢_np)
