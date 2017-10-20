@@ -12,6 +12,7 @@
     #:reductions (reduction)
     #:grammar grammar-id
     #:defn-pattern defn-pattern
+    #:gamma0 Γ_0
     #:type-judgment ⊢_p)
   ;; ==> 
   (begin
@@ -44,7 +45,7 @@
         [(_ defns:id e (... ...)) ; the `defns` identifier is added by the reader
          #`(#%module-begin
             (define defns (filter (redex-match? grammar-id defn-pattern) (term (e (... ...)))))
-            (run grammar-id reduction ⊢_p (prog e (... ...))))]))
+            (run grammar-id reduction Γ_0 ⊢_p (prog e (... ...))))]))
 
     ;; -----------------------------------------------------------------------------------------------
     ;; reader

@@ -8,12 +8,12 @@
 
 ;; -----------------------------------------------------------------------------
 (define-syntax-rule
-  (run syntax reduction ⊢_p e)
+  (run syntax reduction Γ_0 ⊢_pxxx e)
   (let/ec return
     (displayln (term e))
     (when (not (redex-match? syntax p (term e)))
       (return 'syntax-error))
-    (define the-type (judgment-holds (⊢_p · e T) T))
+    (define the-type (judgment-holds (⊢_pxxx Γ_0 e T) T))
     (when (not the-type)
       (return 'type-error))
     ;; else:
