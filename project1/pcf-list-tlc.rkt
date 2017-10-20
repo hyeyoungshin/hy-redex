@@ -36,7 +36,7 @@
          (→ T T)
          (List T))
   ;; Programs
-  (p ::= (prog (def (x_!_1 : T) v) ... e))
+  (p ::= (prog (def x_!_1 : T v) ... e))
   ;; Defs
   ;(d ::= (def x : T v))
   ;; Terms
@@ -82,7 +82,7 @@
    ...
    (⊢_e ((x_1 : T_1) ...) e T)
    ------------------------------------------------------ "T-PRO"
-   (⊢_p () (prog (def (name x_1 x_!_1) : T_1 v_1) ... e) T)]
+   (⊢_p () (prog (def x_1 : T_1 v_1) ... e) T)]
 )
 
 
@@ -272,7 +272,7 @@
 
 (define-extended-language VPCF PCF-list
   (v ::= .... (cons v v))
-  (P-value ::= (prog d ... E-value))
+  (P-value ::= (prog (def x_!_1 : T v) ... E-value))
   (E-value ::= hole
                (E-value e)
                (v E-value)
@@ -291,9 +291,13 @@
 ;; ---------------------------------------------------------------------------------------------------
 ;; Typing of VPCF programs
 
-(define-extended-judgment-form VPCF ⊢_p
+(define-judgment-form VPCF
   #:mode (⊢_vp I I O)
-  #:contract (⊢_vp Γ p T))
+  #:contract (⊢_vp Γ p T)
+  ((⊢_p Γ p T) ; (where _ , (begin (displayln `(,(term Γ) ,(term p))) 0)) <------ debugging typing
+   ------------
+   (⊢_vp Γ p T)))
+         
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Evaluation of VPCF programs
@@ -354,8 +358,8 @@
   eval-value : p -> v
   [(eval-value p)
    v
-   (where (prog d ... v) ,(first (apply-reduction-relation* ->value (term p))))
-  (side-condition (type-checks-value? (term p)))])  
+   (where (prog (def x_!_1 : T v_1) ... v) ,(first (apply-reduction-relation* ->value (term p))))])
+  ;(side-condition (type-checks-value? (term p)))])  
 
 (define (type-checks-value? p)
   (not (null? (judgment-holds (⊢_vp () ,p T)
@@ -366,10 +370,10 @@
 ;; Tests on VPCF
 
 (module+ test
-  (stepper ->value (term (prog (def x : Num 3) (def y : Num 2) (def x : Bool tt) x)))
+  (stepper ->value (term (prog (def x : Num 3) (def y : Num 2) (def z : Bool tt) x)))
    (chk
-    #:= (judgment-holds (⊢_vp () (prog (def x : Num 3) (def x : (List Num) (nil Num)) (cons x x)) T) T)
-    (list (term (List Num)))
+    #:= (judgment-holds (⊢_vp () (prog (def y : Num 2) (def add2 : (→ Num Num) (λ y : Num (+ y 2))) y) T) T)
+    (list (term Num))
     #:= (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) T) T)
     (list (term (List Num)))
     #:= (judgment-holds (⊢_vp () (prog (def y : Num 2) (def add2 : (→ Num Num) (λ y : Num (+ y 2))) (add2 y)) T) T)
@@ -405,7 +409,7 @@
 
 (define-extended-language NPCF PCF-list
   (v ::= .... (cons e e))
-  (P-name ::= (prog d ... E-name))
+  (P-name ::= (prog (def x_!_1 : T ... v) ... E-name))
   (E-name ::= hole
               (E-name e)
               (fix E-name)
@@ -422,9 +426,13 @@
 ;; ---------------------------------------------------------------------------------------------------
 ;; Typing of NPCF programs
 
-(define-extended-judgment-form NPCF ⊢_p
+(define-judgment-form NPCF
   #:mode (⊢_np I I O)
-  #:contract (⊢_np Γ p T))
+  #:contract (⊢_np Γ p T)
+  ((⊢_p Γ p T)
+   ------------
+   (⊢_np Γ p T)))
+
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Evaluation of NPCF programs
@@ -487,7 +495,7 @@
   eval-name : p -> v
   [(eval-name p)
    v
-   (where (prog d ... v) ,(first (apply-reduction-relation* ->name (term p))))])
+   (where (prog (def x_!_1 : T v_1) ... v) ,(first (apply-reduction-relation* ->name (term p))))])
 
 (define (type-checks-name? p)
   (not (null? (judgment-holds (⊢_np () ,p T)
