@@ -7,5 +7,6 @@
   #:module-name   project1/NPCF-tlc
   #:reductions    (->name)
   #:grammar       NPCF
-  #:defn-pattern  (def x_1 : T_1 e_1)
+  #:defn-pattern  (def x_!_1 : T_1 e_1)
+  #:gamma0        ()
   #:type-judgment ⊢_np)
