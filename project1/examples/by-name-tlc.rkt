@@ -1,6 +1,5 @@
 #lang project1/NPCF-tlc
 
-(def y : Num 2)
-(def add2 : (→ Num Num) (λ y : Num (+ y 2)))
+(def ones : (List Num) (cons 1 ones))
 
-(add2 y)
+(fst ones)

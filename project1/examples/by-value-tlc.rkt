@@ -1,6 +1,6 @@
 #lang project1/VPCF-tlc
 
-(def y : Num 2)
-(def add2 : (→ Num Num) (λ y : Num (+ y 2)))
+(def x : Num 1)
+(def y : (List Num) (cons 2 (nil Num)))
 
-(add2 y)
+(cons x y)
