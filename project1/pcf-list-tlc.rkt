@@ -374,7 +374,7 @@
 ;; Tests on VPCF
 
 (module+ test
-  (judgment-holds (⊢_vp () (prog (def ones : (List Num) (cons 1 ones)) fst ones) T) T)
+  (judgment-holds (⊢_vp () (prog (def ones : (List Num) (cons 1 ones)) (fst ones)) T) T)
   (judgment-holds (⊢_vp () (prog (def x : Num 2) x) T) T)
   (judgment-holds (⊢_vp () (prog (def x : (List Num) (nil Num)) x) T) T)
   (judgment-holds (⊢_vp () (prog (def x : Bool ff) x) T) T)
