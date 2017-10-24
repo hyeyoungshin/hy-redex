@@ -89,7 +89,7 @@
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on PCF-list programs
-
+#;
 (module+ test 
   (define def1 (term (x : Num)))
   (define def2 (term (y : Num)))
@@ -119,26 +119,19 @@
   #; 
   (test-equal (judgment-holds (⊢_p ((x : Num)) (prog (def x : Bool tt) x) Bool)) #t)
   (test-equal (judgment-holds (⊢_e ((x : Bool)) x Bool)) #t)
-  (judgment-holds (⊢_e ((x : (List Bool)) (y : Num) (x : Num)) x T) T) 
 
-  #; ;; This may not even be allowed in my language
-  (judgment-holds (⊢_p ((x : Num)) (prog (def x : Bool tt) x) T) T)
+;;----------------------------------------------------------------------------------------------
+  (judgment-holds (⊢_e ((x : (List Bool)) (y : Num) (x : Num)) x T) T)  ;; What should this return?
+                                                                        ;; It returns '((List Bool) Num) now.
+;;----------------------------------------------------------------------------------------------
 
-  (judgment-holds (⊢_p () (prog (def x : Bool tt) x) T) T)
+  (test-equal (judgment-holds (⊢_p () (prog (def x : Bool tt) x) Bool)) #t)
   (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (nil Num)) (cons x y)) T) T)
-  
-  (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 2 (nil Num))) (cons x y)) T) T)
   (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : Num 2) (+ x y)) T) T)
-  (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 2 (nil Num))) (fst (cons x y))) T) T)
+
  
   (test-equal (judgment-holds (⊢_p () (prog (def x : Num 1) (def y : (List Num) (nil Num)) (cons x y)) (List Num)))
               #t)
-  (test-equal (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
-              #t)
-  (test-equal (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
-              #t)
-  
-
   (chk
    
    ;; -----------------------------------------------------------------------------------------------------------
@@ -215,9 +208,14 @@
    ---------------------- "T-APP"
    (⊢_e ((x_1 : T_1) ...) (e_1 e_2) T_4)]
 
+  #;
   [
    ----------------------------------------------------- "T-VAR" 
    (⊢_e (((name x_1 x_!_1) : T_1) ... ((name x x_!_1) : T) ((name x_n x_!_1) : T_n) ...) x T)]
+
+  [
+   ----------------------------------------------------- "T-VAR" 
+   (⊢_e ((x_1 : T_1) ... (x : T) (x_n : T_n) ...) x T)]
   
   [(⊢_e ((x_1 : T_1) ...) e_1 Num)
    (⊢_e ((x_1 : T_1) ...) e_2 Num)
@@ -290,13 +288,19 @@
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Typing of VPCF programs
-
+#;
 (define-judgment-form VPCF
   #:mode (⊢_vp I I O)
   #:contract (⊢_vp Γ p T)
   ((⊢_p Γ p T) ; (where _ , (begin (displayln `(,(term Γ) ,(term p))) 0)) <------ debugging typing
    ------------
    (⊢_vp Γ p T)))
+
+(define-extended-judgment-form VPCF ⊢_p
+  #:mode (⊢_vp I I O)
+  #:contract (⊢_vp Γ p T))
+
+
          
 
 ;; ---------------------------------------------------------------------------------------------------
@@ -370,6 +374,16 @@
 ;; Tests on VPCF
 
 (module+ test
+  (judgment-holds (⊢_vp () (prog (def ones : (List Num) (cons 1 ones)) fst ones) T) T)
+  (judgment-holds (⊢_vp () (prog (def x : Num 2) x) T) T)
+  (judgment-holds (⊢_vp () (prog (def x : (List Num) (nil Num)) x) T) T)
+  (judgment-holds (⊢_vp () (prog (def x : Bool ff) x) T) T)
+  (judgment-holds (⊢_vp () (prog (def x : (List Num) (cons 2 2)) x) T) T)
+    
+  (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 2 (nil Num))) (cons x y)) T) T)
+  (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 2 (nil Num))) (fst (cons x y))) T) T)
+  (test-equal (judgment-holds (⊢_vp () (prog (def x : Num 1) (def y : (List Num) (cons 1 (nil Num))) (cons x y)) (List Num)))
+              #t)
   (stepper ->value (term (prog (def x : Num 3) (def y : Num 2) (def z : Bool tt) x)))
    (chk
     #:= (judgment-holds (⊢_vp () (prog (def y : Num 2) (def add2 : (→ Num Num) (λ y : Num (+ y 2))) y) T) T)
@@ -502,8 +516,9 @@
                               T))))
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on NPCF
-
+#;
 (module+ test
+  (judgment-holds (⊢_np () (prog (def ones : (List Num) (cons 1 ones)) (fst ones)) T) T)
   #; 
   (judgment-holds (() ⊢_np (prog (def x : Num 1)
                               (def y : (List Num) (cons 1 (nil Num)))
