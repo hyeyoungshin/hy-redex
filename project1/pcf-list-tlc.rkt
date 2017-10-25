@@ -374,7 +374,18 @@
 ;; Tests on VPCF
 
 (module+ test
+  #;
   (judgment-holds (⊢_vp () (prog (def ones : (List Num) (cons 1 ones)) (fst ones)) T) T)
+  (judgment-holds (⊢_vp () (prog (def listofnums1 : (List Num) (cons 1 2)) listofnums1) T) T)
+  #;
+  (judgment-holds (⊢_vp () (prog (def ones : (List (Unit → Num)) (cons (λ _ : Unit 1)
+                                                                       (cons (λ _ : Unit (fst ones)) (nil (Unit → Num)))))
+                                  ((fst ones)  unit)     ;; should return 1
+                                  ((fst (rst ones)) unit)) ;; should return 1
+                        T) T)
+  
+  
+  (judgment-holds (⊢_vp () (prog (def listofnums2 : (List Num) (cons 1 (cons 2 (nil Num)))) listofnums2) T) T)
   #;
   (judgment-holds (⊢_vp () (prog (def ones : (List (Unit → Num)) (cons (λ _ : Unit 1) (λ _ : Unit ones)) (fst ones)))))
   (judgment-holds (⊢_vp () (prog (def x : Num 2) x) T) T)
