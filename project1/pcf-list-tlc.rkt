@@ -59,7 +59,6 @@
          n
          (λ x : T e)
          (nil T)
-         (fix v)
          (err T string))
   ;; Numbers
   (n ::= number)
@@ -372,7 +371,7 @@
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; Tests on VPCF
-
+#;
 (module+ test
   #;
   (judgment-holds (⊢_vp () (prog (def ones : (List Num) (cons 1 ones)) (fst ones)) T) T)
@@ -700,3 +699,85 @@
                (term ,e))))) ;;or wrap an expression in a program (term (prog (,e))) and check ⊢_e
 
 
+
+
+
+;; ---------------------------------------------------------------------------------------------------
+;; Syntax of SPCF
+
+(define-extended-language SPCF VPCF
+  (T   ::= ....
+           Unit
+           (Stream T))
+  (e   ::= ....
+           unit
+           (λ _ : T e))
+    
+  #;   
+  (st  ::= (cons e e)   ;; (cons e st)
+           (nil T)      
+           (λ _ : T e)) ;; (λ _ : T st)
+  (v   ::= ....
+           unit
+           (λ _ : T e))
+)
+       
+
+;; ---------------------------------------------------------------------------------------------------
+;; Typing of SPCF programs
+(define-judgment-form SPCF
+  #:mode (⊢_sp I I O)
+  #:contract (⊢_sp Γ p T)
+  [(⊢_se ((x_1 : T_1) ...) v_1 T_1)
+   ...
+   (⊢_se ((x_1 : T_1) ...) e T)
+   ------------------------------------------------------ "T-SPRO"
+   (⊢_sp () (prog (def x_1 : T_1 v_1) ... e) T)]
+)
+
+
+(define-extended-judgment-form SPCF ⊢_e
+  #:mode (⊢_se I I O)
+  #:contract (⊢_se Γ e T)
+  
+ [----------------------------------------------------- "T-UNIT"
+  (⊢_se ((x_1 : T_1) ...) unit Unit)] 
+
+ [(⊢_se ((x_1 : T_1) ...) e_1 T)
+  (⊢_se ((x_1 : T_1) ...) e_2 (Stream T))
+  ----------------------------------------------------- "T-STR"
+  (⊢_se ((x_1 : T_1) ...) (cons e_1 e_2) (Stream T) )]
+
+ [----------------------------------------------------- "T-NILSTR"
+  (⊢_se ((x_1 : T_1) ...) (nil T) (Stream T))]
+
+ [(⊢_se ((x_1 : T_1) ...) e (Stream T)) 
+  ----------------------------------------------------- "T-THUNK"
+  (⊢_se ((x_1 : T_1) ...) (λ _ : Unit e) (Stream T))]
+
+ [(⊢_se ((x_1 : T_1) ...) e (Stream T)) 
+  ----------------------------------------------------- "T-FSTSTR"
+  (⊢_se ((x_1 : T_1) ...) (fst e) T)]
+
+ [(⊢_se ((x_1 : T_1) ...) e (Stream T)) 
+  ----------------------------------------------------- "T-RSTSTR"
+  (⊢_se ((x_1 : T_1) ...) (rst e) (Stream T))]
+
+ [(⊢_se ((x_1 : T_1) ...) e (Stream T)) 
+  ----------------------------------------------------- "T-CONS?STR"
+  (⊢_se ((x_1 : T_1) ...) (cons? e) Num)]  
+
+ [(⊢_se ((x_1 : T_1) ...) e (Stream T)) 
+  ----------------------------------------------------- "T-NIL?STR"
+  (⊢_se ((x_1 : T_1) ...) (nil? e) Num)]  
+)
+
+
+(module+ test
+  (judgment-holds (⊢_sp () (prog (def x : Num 1 ) x) T) T)
+  (judgment-holds (⊢_sp () (prog (def x : Num 1 ) (nil Num)) T) T)
+  (judgment-holds (⊢_sp () (prog (def x : Num 1 ) (λ any : Unit (nil Num))) T) T)
+  ;(judgment-holds (⊢_sp () (prog (def l : (Stream Num) (cons 1 (λ any : Unit 2))) l) T) T)
+  (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones)) ones)) T) T)
+  )
+  
