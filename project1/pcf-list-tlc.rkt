@@ -777,7 +777,10 @@
   (judgment-holds (⊢_sp () (prog (def x : Num 1 ) x) T) T)
   (judgment-holds (⊢_sp () (prog (def x : Num 1 ) (nil Num)) T) T)
   (judgment-holds (⊢_sp () (prog (def x : Num 1 ) (λ any : Unit (nil Num))) T) T)
-  ;(judgment-holds (⊢_sp () (prog (def l : (Stream Num) (cons 1 (λ any : Unit 2))) l) T) T)
-  (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones)) ones)) T) T)
-  )
+  (judgment-holds (⊢_sp () (prog (def l : (Stream Num) (cons 1 (nil Num))) l) T) T)
+  (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) ones) T) T)
+  (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones)) T) T)
+  (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (rst ones)) T) T)
+)
+
   
