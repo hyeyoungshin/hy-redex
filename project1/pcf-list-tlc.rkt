@@ -781,6 +781,10 @@
    v
    (where (prog (def x_!_1 : T v_1) ... v) ,(first (apply-reduction-relation* ->soup (term p))))])
 
+ ;; Violates abstration principle in software engineering
+ ;; copy and paste of ->value
+ ;; Can I just inherit ->value?
+ ;; But maybe I need to redefine fst and rst correspondingly to Stream T type
  (define ->soup
   (reduction-relation
    SPCF
@@ -794,8 +798,16 @@
    (--> (in-hole P-value (fst (nil T)))
         (in-hole P-value (err T "fst of nil"))
         "ES-FST-ERR")
-   (--> (in-hole P-value (rst (cons v_1 v_2)))
-        (in-hole P-value v_2)
+   (--> (in-hole P-value (rst (cons v_1 (nil T))))
+        (in-hole P-value (nil T))
+        "ES-RSTNIL")
+   (--> (in-hole P-value (rst (cons v_1 (λ any : T e))))
+        (in-hole P-value ((λ any : T e) unit))
+        "ES-RSTTHUNK")
+   
+   #; 
+   (--> (in-hole P-value (rst (cons v_1 v_2)))  ;; v_2 could be another (cons v v) this case overlaps with 
+        (in-hole P-value v_2)                   ;; thunk case allowing nondeterminism
         "ES-RST")
    (--> (in-hole P-value (rst (nil T)))
         (in-hole P-value (err T "rst of nil"))
@@ -846,14 +858,23 @@
   #;
   (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones))))
 
+  ;; There are two possible reduction path
+  #;
+  (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst (rst ones)))))
+
   (chk
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones))))
     (term 1)
-   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ((rst ones) unit)))))
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst (rst ones)))))
     (term 1)
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (rst ones))))
+    (term ones)
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones)))
-                              (fst ((rst ((rst ones) unit)) unit)))))
+                              (fst (rst (rst (rst ones)))))))
     (term 1)
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (cons 1 (nil Num))))
+                              (rst ones))))
+    (term (cons 1 (nil Num)))
    )
 )
 
