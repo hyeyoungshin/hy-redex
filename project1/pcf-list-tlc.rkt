@@ -709,6 +709,7 @@
   (T   ::= ....
            Unit
            (Stream T))
+  (p   ::= ....)
   (e   ::= ....
            unit
            (λ _ : T e))
@@ -718,8 +719,7 @@
            (nil T)      
            (λ _ : T e)) ;; (λ _ : T st)
   (v   ::= ....
-           unit
-           (λ _ : T e))
+           unit)
 )
        
 
@@ -772,15 +772,89 @@
   (⊢_se ((x_1 : T_1) ...) (nil? e) Num)]  
 )
 
+;; ---------------------------------------------------------------------------------------------------
+;; Evaluation of SPCF programs
+
+(define-metafunction SPCF
+  eval-soup : p -> v
+  [(eval-soup p)
+   v
+   (where (prog (def x_!_1 : T v_1) ... v) ,(first (apply-reduction-relation* ->soup (term p))))])
+
+ (define ->soup
+  (reduction-relation
+   SPCF
+   #:domain p
+   (--> (in-hole P-value ((λ x : T e) v)) 
+        (in-hole P-value (substitute e x v))  
+        "ES-BETA")
+   (--> (in-hole P-value (fst (cons v_1 v_2)))
+        (in-hole P-value v_1)
+        "ES-FST")
+   (--> (in-hole P-value (fst (nil T)))
+        (in-hole P-value (err T "fst of nil"))
+        "ES-FST-ERR")
+   (--> (in-hole P-value (rst (cons v_1 v_2)))
+        (in-hole P-value v_2)
+        "ES-RST")
+   (--> (in-hole P-value (rst (nil T)))
+        (in-hole P-value (err T "rst of nil"))
+        "ES-RST-ERR")
+   (--> (in-hole P-value (cons? (cons v_1 v_2)))
+        (in-hole P-value 0)
+        "ES-CONS?-TT")
+   (--> (in-hole P-value (cons? (nil T)))
+        (in-hole P-value 1)
+        "ES-CONS?-FF")
+   (--> (in-hole P-value (nil? (nil T)))
+        (in-hole P-value 0)
+        "ES-NIL?-TT")
+   (--> (in-hole P-value (nil? (cons v_1 v_2)))
+        (in-hole P-value 1)
+        "ES-NIL?-FF")
+   (--> (in-hole P-value (if0 0 e_1 e_2))
+        (in-hole P-value e_1)
+        "ES-IF0-TT")
+   (--> (in-hole P-value (if0 n e_1 e_2))
+        (in-hole P-value e_2)
+        (side-condition (not (equal? 0 (term n))))
+        "ES-IF0-FF")
+   (--> (in-hole P-value (+ n_1 n_2))
+        (in-hole P-value ,(+ (term n_1) (term n_2)))
+        "ES-SUM")
+   (--> (in-hole P-value (- n_1 n_2))
+        (in-hole P-value ,(- (term n_1) (term n_2)))
+        "ES-SUB")
+   (--> (prog (def x_1 : T_1 v_1) ... (def x : T v) (def x_n : T_n v_n) ...
+           (in-hole E-value x))
+        (prog (def x_1 : T_1 v_1) ... (def x : T v) (def x_n : T_n v_n) ...
+           (in-hole E-value v))
+        "EV-DEF")
+  )
+ )
+
 
 (module+ test
-  (judgment-holds (⊢_sp () (prog (def x : Num 1 ) x) T) T)
-  (judgment-holds (⊢_sp () (prog (def x : Num 1 ) (nil Num)) T) T)
-  (judgment-holds (⊢_sp () (prog (def x : Num 1 ) (λ any : Unit (nil Num))) T) T)
+  (define ones (term (cons 1 (λ any : Unit ones))))
+  (judgment-holds (⊢_sp () (prog (def x : Num 1) x) T) T)
+  (judgment-holds (⊢_sp () (prog (def x : Num 1) (nil Num)) T) T)
+  (judgment-holds (⊢_sp () (prog (def x : Num 1) (λ any : Unit (nil Num))) T) T)
   (judgment-holds (⊢_sp () (prog (def l : (Stream Num) (cons 1 (nil Num))) l) T) T)
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) ones) T) T)
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones)) T) T)
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (rst ones)) T) T)
+  #;
+  (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones))))
+
+  (chk
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones))))
+    (term 1)
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ((rst ones) unit)))))
+    (term 1)
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones)))
+                              (fst ((rst ((rst ones) unit)) unit)))))
+    (term 1)
+   )
 )
 
   
