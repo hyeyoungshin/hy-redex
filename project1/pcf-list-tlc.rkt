@@ -875,7 +875,7 @@
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones)) T) T)
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (rst ones)) T) T)
   ;; below does not type check (it might be because (cons 1 (nil Num)) is both (List Num) and (Stream Num))
-  (judgment-holds (⊢_sp () (prog (def length : (→ (Stream Num) Num) (λ l : (Stream Num) (if0 (nil? (fst l))
+  (judgment-holds (⊢_sp () (prog (def length : (→ (Stream Num) Num) (λ l : (Stream Num) (if0 (nil? l)
                                                                         0
                                                                         (+ 1 (length (rst l))))))
                                  (length (cons 1 (nil Num)))) T) T)
@@ -897,10 +897,13 @@
   (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst (rst (rst (rst (rst (rst ones)))))))))
   #;
   (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (rst ones))))
-  
+  #;
   (stepper ->soup (term (prog ((λ _ : (Stream Num) 42) (rst (cons 1 (λ _ : Unit 1)))))))
+
   
   (chk
+   #:= (term (eval-soup (prog (thunk? (λ _ : Unit 1)))))
+   (term 0)
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst ones))))
     (term 1)
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst (rst ones)))))
