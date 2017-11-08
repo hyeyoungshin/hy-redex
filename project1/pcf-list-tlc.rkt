@@ -316,23 +316,29 @@
         (in-hole P-value v_1)
         "EV-FST")
    (--> (in-hole P-value (fst (nil T)))
-        (in-hole P-value (err T "fst of nil"))
+        (in-hole P-value (err T "fst of nil"))     ;; will fix this to result in (nil T)
         "EV-FST-ERR")
    (--> (in-hole P-value (rst (cons v_1 v_2)))
         (in-hole P-value v_2)
         "EV-RST")
    (--> (in-hole P-value (rst (nil T)))
-        (in-hole P-value (err T "rst of nil"))
+        (in-hole P-value (err T "rst of nil"))     ;; will fix this to result in (nil T)
         "EV-RST-ERR")
    (--> (in-hole P-value (cons? (cons v_1 v_2)))
         (in-hole P-value 0)
         "EV-CONS?-TT")
-   (--> (in-hole P-value (cons? (nil T)))
+   (--> (in-hole P-value (cons? v))
         (in-hole P-value 1)
+        (side-condition (not (redex-match? VPCF (cons v_1 v_2) (term v))))
         "EV-CONS?-FF")
    (--> (in-hole P-value (nil? (nil T)))
         (in-hole P-value 0)
         "EV-NIL?-TT")
+   (--> (in-hole P-value (nil? v))
+        (in-hole P-value 1)
+        (side-condition (not (redex-match? VPCF (nil T) (term v))))
+        "EV-NIL?-FF")
+   #;
    (--> (in-hole P-value (nil? (cons v_1 v_2)))
         (in-hole P-value 1)
         "EV-NIL?-FF")
@@ -484,14 +490,16 @@
    (--> (in-hole P-name (cons? (cons e_1 e_2)))
         (in-hole P-name 0)
         "EN-CONS?-TT")
-   (--> (in-hole P-name (cons? (nil T)))
+   (--> (in-hole P-name (cons? v))
         (in-hole P-name 1)
+        (side-condition (not (redex-match? NPCF (cons v_1 v_2) (term v))))
         "EN-CONS?-FF")
    (--> (in-hole P-name (nil? (nil T)))
         (in-hole P-name 0)
         "EN-NIL?-TT")
-   (--> (in-hole P-name (nil? (cons e_1 e_2)))
+   (--> (in-hole P-name (nil? v))
         (in-hole P-name 1)
+        (side-condition (not (redex-match? NPCF (nil T) (term v))))
         "EN-NIL?-FF")
    (--> (in-hole P-name (if0 0 e_1 e_2))
         (in-hole P-name e_1)
@@ -796,33 +804,41 @@
         (in-hole P-value v_1)
         "ES-FST")
    (--> (in-hole P-value (fst (nil T)))
-        (in-hole P-value (err T "fst of nil"))
+        (in-hole P-value (nil T))                  ;; instead of throwing an error need this for length function
         "ES-FST-ERR")
+   (--> (in-hole P-value (rst (cons v_1 v_2)))
+        (in-hole P-value v_2)
+        (side-condition (not (redex-match? SPCF (λ _ : T e) (term v_2))))
+        "ES-RST")
+   (--> (in-hole P-value (rst (cons v_1 v_2)))
+        (in-hole P-value (v_2 unit))
+        (side-condition (redex-match? SPCF (λ _ : T e) (term v_2)))
+        "ES-RSTTHUNK")
+   #;
    (--> (in-hole P-value (rst (cons v_1 (nil T))))
         (in-hole P-value (nil T))
         "ES-RSTNIL")
-   (--> (in-hole P-value (rst (cons v_1 (λ any : T e))))
-        (in-hole P-value ((λ any : T e) unit))
-        "ES-RSTTHUNK")
-   
-   #; 
-   (--> (in-hole P-value (rst (cons v_1 v_2)))  ;; v_2 could be another (cons v v) this case overlaps with 
-        (in-hole P-value v_2)                   ;; thunk case allowing nondeterminism
+   #;
+   (--> (in-hole P-value (rst (cons v_1 e_1)))  ;; v_2 could be another (cons v v) this case overlaps with 
+        (in-hole P-value e_1)                   ;; thunk case allowing nondeterminism
+        (side-condition (not (equal? (term (λ any : T e)) (term e_1))))
         "ES-RST")
    (--> (in-hole P-value (rst (nil T)))
-        (in-hole P-value (err T "rst of nil"))
+        (in-hole P-value (nil T))
         "ES-RST-ERR")
    (--> (in-hole P-value (cons? (cons v_1 v_2)))
         (in-hole P-value 0)
         "ES-CONS?-TT")
-   (--> (in-hole P-value (cons? (nil T)))
+   (--> (in-hole P-value (cons? v))
         (in-hole P-value 1)
+        (side-condition (not (redex-match? SPCF (cons v_1 v_2) (term v))))
         "ES-CONS?-FF")
    (--> (in-hole P-value (nil? (nil T)))
         (in-hole P-value 0)
         "ES-NIL?-TT")
-   (--> (in-hole P-value (nil? (cons v_1 v_2)))
+   (--> (in-hole P-value (nil? v))
         (in-hole P-value 1)
+        (side-condition (not (redex-match? SPCF (nil T) (term v))))
         "ES-NIL?-FF")
    (--> (in-hole P-value (if0 0 e_1 e_2))
         (in-hole P-value e_1)
@@ -855,8 +871,15 @@
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) ones) T) T)
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones)) T) T)
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (rst ones)) T) T)
-  #;
-  (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones))))
+  (judgment-holds (⊢_sp () (prog (def length : (→ (Stream Num) Num) (λ l : (Stream Num) (if0 (nil? (fst l))
+                                                                        0
+                                                                        (+ 1 (length (rst l))))))
+                                 (length (cons 1 (nil Num)))) T) T)
+  
+  (stepper ->soup (term (prog (def length : (→ (Stream Num) Num) (λ l : (Stream Num) (if0 (nil? (fst l))
+                                                                        0
+                                                                        (+ 1 (length (rst l))))))
+                                 (length (cons 1 (nil Num))))))
 
   ;; There are two possible reduction path
   #;
@@ -878,4 +901,16 @@
    )
 )
 
+
+;; ----------------------------------------------------------------------------------------------------
+;; A Compiler from VPCF to SPCF
+
+(define-union-language UPCF (v-. VPCF) (s-. SPCF))
+
+#;
+(define-metafunction UPCF
+  compile-vpcf : e -> e
+  
+  [])
+  
   
