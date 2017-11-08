@@ -901,7 +901,7 @@
     (term 1)
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (rst ones))))
     (term (cons 1 (λ _ : Unit ones)))
-   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones)))
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones)))
                               (fst (rst (rst (rst ones)))))))
     (term 1)
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (cons 1 (nil Num))))
