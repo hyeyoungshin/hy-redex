@@ -10,13 +10,17 @@
   ;; the grammar for PCF plus lists 
   VPCF
   NPCF
+  SPCF
 
   ;; the reduction systems 
   ->value
   ->name
+  ->soup
+  
   ;; the judgment systems
   ⊢_vp
-  ⊢_np)
+  ⊢_np
+  ⊢_sp)
 
 
 ;; ---------------------------------------------------------------------------------------------------
@@ -34,7 +38,8 @@
   (T ::= Bool
          Num
          (→ T T)
-         (List T))
+         (List T)
+         )
   ;; Programs
   (p ::= (prog (def x_!_1 : T v) ... e))
   ;; Defs
@@ -206,12 +211,7 @@
    (⊢_e ((x_1 : T_1) ...) e_2 T_3)
    ---------------------- "T-APP"
    (⊢_e ((x_1 : T_1) ...) (e_1 e_2) T_4)]
-
-  #;
-  [
-   ----------------------------------------------------- "T-VAR" 
-   (⊢_e (((name x_1 x_!_1) : T_1) ... ((name x x_!_1) : T) ((name x_n x_!_1) : T_n) ...) x T)]
-
+     
   [
    ----------------------------------------------------- "T-VAR" 
    (⊢_e ((x_1 : T_1) ... (x : T) (x_n : T_n) ...) x T)]
@@ -225,29 +225,29 @@
    (⊢_e ((x_1 : T_1) ...) e_2 Num)
    ----------------------- "T-SUB"
    (⊢_e ((x_1 : T_1) ...) (- e_1 e_2) Num)]
-
+  
   [(⊢_e ((x_1 : T_1) ...) e_1 T)
    (⊢_e ((x_1 : T_1) ...) e_2 (List T))
    --------------------------------- "T-CONS"
    (⊢_e ((x_1 : T_1) ...) (cons e_1 e_2) (List T))]
-
+  
   [(⊢_e ((x_1 : T_1) ...) e_1 (List T))
    --------------------- "T-FST"
    (⊢_e ((x_1 : T_1) ...) (fst e_1) T)]
-
+  
   [(⊢_e ((x_1 : T_1) ...) e_1 (List T))
    ---------------------------- "T-RST"
    (⊢_e ((x_1 : T_1) ...) (rst e_1) (List T))]
-
+  
   [(⊢_e ((x_1 : T_1) ...) e_1 T)
    (⊢_e ((x_1 : T_1) ...) e_2 (List T))
    ---------------------------- "T_CONS?"
    (⊢_e ((x_1 : T_1) ...) (cons? (cons e_1 e_2)) Num)]
-
+  
   [(⊢_e ((x_1 : T_1) ...) e_1 (List T))
    ----------------------- "T-NIL?"
    (⊢_e ((x_1 : T_1) ...) (nil? e_1) Num)]
-
+  
   [
    ------------------------------ "T-NIL"
    (⊢_e ((x_1 : T_1) ...) (nil T) (List T))]
@@ -871,27 +871,36 @@
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) ones) T) T)
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones)) T) T)
   (judgment-holds (⊢_sp () (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (rst ones)) T) T)
+  ;; below does not type check (it might be because (cons 1 (nil Num)) is both (List Num) and (Stream Num))
   (judgment-holds (⊢_sp () (prog (def length : (→ (Stream Num) Num) (λ l : (Stream Num) (if0 (nil? (fst l))
                                                                         0
                                                                         (+ 1 (length (rst l))))))
                                  (length (cons 1 (nil Num)))) T) T)
-  
+
+  (judgment-holds (⊢_sp () (prog (cons 1 (nil Num))) T) T)
+
+  (judgment-holds (⊢_sp () (prog (def add1 : (→ Num Num) (λ x : Num (+ 1 x))) (add1 1)) T) T)
+
+  ;; ---------------------------------------------------------------------------------------------------------------------
+  ;; length (ones) example
+  #;
   (stepper ->soup (term (prog (def length : (→ (Stream Num) Num) (λ l : (Stream Num) (if0 (nil? (fst l))
                                                                         0
                                                                         (+ 1 (length (rst l))))))
-                                 (length (cons 1 (nil Num))))))
-
-  ;; There are two possible reduction path
+                              (def ones : (Stream Num) (cons 1 (λ _ : Unit ones)))
+                              (length ones))))
   #;
-  (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst (rst ones)))))
+  (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst (rst (rst (rst (rst (rst ones)))))))))
+
+  (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (rst ones))))
 
   (chk
-   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst ones))))
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst ones))))
     (term 1)
-   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (fst (rst ones)))))
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst (rst ones)))))
     (term 1)
-   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones))) (rst ones))))
-    (term ones)
+   #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (rst ones))))
+    (term (cons 1 (λ _ : Unit ones)))
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ any : Unit ones)))
                               (fst (rst (rst (rst ones)))))))
     (term 1)
