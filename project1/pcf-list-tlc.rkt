@@ -85,7 +85,7 @@
   [(⊢_e ((x_1 : T_1) ...) v_1 T_1)
    ...
    (⊢_e ((x_1 : T_1) ...) e T)
-   ------------------------------------------------------ "T-PRO"
+   ------------------------------------------------------ "T-PROG"
    (⊢_p () (prog (def x_1 : T_1 v_1) ... e) T)]
 )
 
@@ -316,39 +316,35 @@
         (in-hole P-value v_1)
         "EV-FST")
    (--> (in-hole P-value (fst (nil T)))
-        (in-hole P-value (err T "fst of nil"))     ;; will fix this to result in (nil T)
-        "EV-FST-ERR")
+        (in-hole P-value (err T "fst of nil"))    
+        "EV-FSTERR")
    (--> (in-hole P-value (rst (cons v_1 v_2)))
         (in-hole P-value v_2)
         "EV-RST")
    (--> (in-hole P-value (rst (nil T)))
-        (in-hole P-value (err T "rst of nil"))     ;; will fix this to result in (nil T)
-        "EV-RST-ERR")
+        (in-hole P-value (err T "rst of nil"))     
+        "EV-RSTERR")
    (--> (in-hole P-value (cons? (cons v_1 v_2)))
         (in-hole P-value 0)
-        "EV-CONS?-TT")
+        "EV-CONS?TT")
    (--> (in-hole P-value (cons? v))
         (in-hole P-value 1)
         (side-condition (not (redex-match? VPCF (cons v_1 v_2) (term v))))
-        "EV-CONS?-FF")
+        "EV-CONS?FF")
    (--> (in-hole P-value (nil? (nil T)))
         (in-hole P-value 0)
-        "EV-NIL?-TT")
+        "EV-NIL?TT")
    (--> (in-hole P-value (nil? v))
         (in-hole P-value 1)
         (side-condition (not (redex-match? VPCF (nil T) (term v))))
-        "EV-NIL?-FF")
-   #;
-   (--> (in-hole P-value (nil? (cons v_1 v_2)))
-        (in-hole P-value 1)
-        "EV-NIL?-FF")
+        "EV-NIL?FF")
    (--> (in-hole P-value (if0 0 e_1 e_2))
         (in-hole P-value e_1)
-        "EV-IF0-TT")
+        "EV-IF0TT")
    (--> (in-hole P-value (if0 n e_1 e_2))
         (in-hole P-value e_2)
         (side-condition (not (equal? 0 (term n))))
-        "EV-IF0-FF")
+        "EV-IF0FF")
    (--> (in-hole P-value (+ n_1 n_2))
         (in-hole P-value ,(+ (term n_1) (term n_2)))
         "EV-SUM")
@@ -480,34 +476,34 @@
         "EN-FST")
    (--> (in-hole P-name (fst (nil T)))
         (in-hole P-name (err T "fst of nil"))
-        "EN-FST-ERR")
+        "EN-FSTERR")
    (--> (in-hole P-name (rst (cons e_1 e_2)))
         (in-hole P-name e_2)
         "EN-RST")
    (--> (in-hole P-name (rst (nil T)))
         (in-hole P-name (err T "rst of nil"))
-        "EN-RST-ERR")
+        "EN-RSTERR")
    (--> (in-hole P-name (cons? (cons e_1 e_2)))
         (in-hole P-name 0)
-        "EN-CONS?-TT")
+        "EN-CONS?TT")
    (--> (in-hole P-name (cons? v))
         (in-hole P-name 1)
         (side-condition (not (redex-match? NPCF (cons v_1 v_2) (term v))))
-        "EN-CONS?-FF")
+        "EN-CONS?FF")
    (--> (in-hole P-name (nil? (nil T)))
         (in-hole P-name 0)
-        "EN-NIL?-TT")
+        "EN-NIL?TT")
    (--> (in-hole P-name (nil? v))
         (in-hole P-name 1)
         (side-condition (not (redex-match? NPCF (nil T) (term v))))
-        "EN-NIL?-FF")
+        "EN-NIL?FF")
    (--> (in-hole P-name (if0 0 e_1 e_2))
         (in-hole P-name e_1)
-        "EN-IF0-TT")
+        "EN-IF0TT")
    (--> (in-hole P-name (if0 n e_1 e_2))
         (in-hole P-name e_2)
         (side-condition (not (equal? 0 (term n))))
-        "EN-IF0-FF")
+        "EN-IF0FF")
    (--> (in-hole P-name (+ n_1 n_2))
         (in-hole P-name ,(+ (term n_1) (term n_2)))
         "EN-SUM")
@@ -720,14 +716,11 @@
   (p   ::= ....)
   (e   ::= ....
            unit
-           (λ _ : T e))
-    
-  #;   
-  (st  ::= (cons e e)   ;; (cons e st)
-           (nil T)      
-           (λ _ : T e)) ;; (λ _ : T st)
+           (thunk? e))
   (v   ::= ....
            unit)
+  (E-value ::= ....
+               (thunk? E-value))
 )
        
 
@@ -739,7 +732,7 @@
   [(⊢_se ((x_1 : T_1) ...) v_1 T_1)
    ...
    (⊢_se ((x_1 : T_1) ...) e T)
-   ------------------------------------------------------ "T-SPRO"
+   ------------------------------------------------------ "T-SPROG"
    (⊢_sp () (prog (def x_1 : T_1 v_1) ... e) T)]
 )
 
@@ -777,7 +770,11 @@
 
  [(⊢_se ((x_1 : T_1) ...) e (Stream T)) 
   ----------------------------------------------------- "T-NIL?STR"
-  (⊢_se ((x_1 : T_1) ...) (nil? e) Num)]  
+  (⊢_se ((x_1 : T_1) ...) (nil? e) Num)]
+  
+ [(⊢_se ((x_1 : T_1) ...) e (Stream T)) 
+  ----------------------------------------------------- "T-THUNK?STR"
+  (⊢_se ((x_1 : T_1) ...) (thunk? e) Num)]  
 )
 
 ;; ---------------------------------------------------------------------------------------------------
@@ -803,50 +800,56 @@
    (--> (in-hole P-value (fst (cons v_1 v_2)))
         (in-hole P-value v_1)
         "ES-FST")
+   (--> (in-hole P-value (fst v))
+        (in-hole P-value (fst (v unit)))
+        (side-condition (redex-match? SPCF (λ _ : T e) (term v)))
+        "ES-FSTTHUNK")
    (--> (in-hole P-value (fst (nil T)))
-        (in-hole P-value (nil T))                  ;; instead of throwing an error need this for length function
-        "ES-FST-ERR")
+        (in-hole P-value (err T "fst of nil"))       
+        "ES-FSTERR")
    (--> (in-hole P-value (rst (cons v_1 v_2)))
         (in-hole P-value v_2)
-        (side-condition (not (redex-match? SPCF (λ _ : T e) (term v_2))))
         "ES-RST")
-   (--> (in-hole P-value (rst (cons v_1 v_2)))
-        (in-hole P-value (v_2 unit))
-        (side-condition (redex-match? SPCF (λ _ : T e) (term v_2)))
+   (--> (in-hole P-value (rst v))
+        (in-hole P-value (v unit))
+        (side-condition (redex-match? SPCF (λ _ : T e) (term v)))
         "ES-RSTTHUNK")
-   #;
-   (--> (in-hole P-value (rst (cons v_1 (nil T))))
-        (in-hole P-value (nil T))
-        "ES-RSTNIL")
-   #;
-   (--> (in-hole P-value (rst (cons v_1 e_1)))  ;; v_2 could be another (cons v v) this case overlaps with 
-        (in-hole P-value e_1)                   ;; thunk case allowing nondeterminism
-        (side-condition (not (equal? (term (λ any : T e)) (term e_1))))
-        "ES-RST")
    (--> (in-hole P-value (rst (nil T)))
-        (in-hole P-value (nil T))
-        "ES-RST-ERR")
+        (in-hole P-value (err T "rst of nil"))
+        (side-condition (not (redex-match? SPCF (λ _ : T e) (term v))))
+        "ES-RSTERR")
    (--> (in-hole P-value (cons? (cons v_1 v_2)))
         (in-hole P-value 0)
-        "ES-CONS?-TT")
+        "ES-CONS?TT")
    (--> (in-hole P-value (cons? v))
         (in-hole P-value 1)
         (side-condition (not (redex-match? SPCF (cons v_1 v_2) (term v))))
-        "ES-CONS?-FF")
+        "ES-CONS?FF")
    (--> (in-hole P-value (nil? (nil T)))
         (in-hole P-value 0)
-        "ES-NIL?-TT")
+        "ES-NIL?TT")
    (--> (in-hole P-value (nil? v))
         (in-hole P-value 1)
         (side-condition (not (redex-match? SPCF (nil T) (term v))))
-        "ES-NIL?-FF")
+        "ES-NIL?FF")
+   ;; --------------------------------------------------------------------
+   ;; thunk? 
+   (--> (in-hole P-value (thunk? v))
+        (in-hole P-value 0)
+        (side-condition (redex-match? SPCF (λ _ : T e) (term v)))
+        "ES-THUNK?TT")
+   (--> (in-hole P-value (thunk? v))
+        (in-hole P-value 1)
+        (side-condition (not (redex-match? SPCF (λ _ : T e) (term v))))
+        "ES-THUNK?FF")
+   ;; --------------------------------------------------------------------
    (--> (in-hole P-value (if0 0 e_1 e_2))
         (in-hole P-value e_1)
-        "ES-IF0-TT")
+        "ES-IF0TT")
    (--> (in-hole P-value (if0 n e_1 e_2))
         (in-hole P-value e_2)
         (side-condition (not (equal? 0 (term n))))
-        "ES-IF0-FF")
+        "ES-IF0FF")
    (--> (in-hole P-value (+ n_1 n_2))
         (in-hole P-value ,(+ (term n_1) (term n_2)))
         "ES-SUM")
@@ -884,32 +887,36 @@
   ;; ---------------------------------------------------------------------------------------------------------------------
   ;; length (ones) example
   #;
-  (stepper ->soup (term (prog (def length : (→ (Stream Num) Num) (λ l : (Stream Num) (if0 (nil? (fst l))
-                                                                        0
-                                                                        (+ 1 (length (rst l))))))
+  (stepper ->soup (term (prog (def length : (→ (Stream Num) Num) (λ l : (Stream Num) (if0 (nil? l)
+                                                                                      0
+                                                                                     (+ 1 (length (rst l))))))
+                              (def three-ones : (Stream Num) (cons 1 (cons 1 (cons 1 (nil Num)))))
                               (def ones : (Stream Num) (cons 1 (λ _ : Unit ones)))
                               (length ones))))
   #;
   (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst (rst (rst (rst (rst (rst ones)))))))))
-
+  #;
   (stepper ->soup (term (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (rst ones))))
-
+  
+  (stepper ->soup (term (prog ((λ _ : (Stream Num) 42) (rst (cons 1 (λ _ : Unit 1)))))))
+  
   (chk
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst ones))))
     (term 1)
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (fst (rst ones)))))
     (term 1)
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones))) (rst ones))))
-    (term (cons 1 (λ _ : Unit ones)))
+    (term (λ _ : Unit ones))
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (λ _ : Unit ones)))
                               (fst (rst (rst (rst ones)))))))
     (term 1)
    #:= (term (eval-soup (prog (def ones : (Stream Num) (cons 1 (cons 1 (nil Num))))
                               (rst ones))))
     (term (cons 1 (nil Num)))
-   )
-)
-
+   #:= (term (eval-soup (prog ((λ _ : (Stream Num) 42) (rst (cons 1 (λ _ : Unit 1)))))))
+    (term 42)
+    )
+  )
 
 ;; ----------------------------------------------------------------------------------------------------
 ;; A Compiler from VPCF to SPCF
