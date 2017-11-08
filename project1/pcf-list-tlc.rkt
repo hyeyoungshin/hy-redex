@@ -927,9 +927,20 @@
 (define-union-language UPCF (v-. VPCF) (s-. SPCF))
 
 #;
-(define-metafunction UPCF
-  compile-vpcf : e -> e
+(define-metafunction SPCF
+  compile-npcf : e -> e
+  [(compile-npcf v) v]
+  [(compile-npcf x) x]
+  [(compile-npcf (λ x : T e)) (λ x : T e)]
+  [(compile-npcf (e e)) (e e)]
+  [(compile-npcf (cons v e)) (cons v (λ _ : Unit e))]
+  [(compile-npcf (fst e)) (fst e)]
+  [(compile-npcf (rst e)) (rst e)]
+  [(compile-npcf (cons? e)) (cons? e)]
+  [(compile-npcf (nil? e)) (nil? e)]
+  [(compile-npcf (+ e e)) (+ e e)]
+  [(compile-npcf (- e e)) (- e e)]
+  [(compile-npcf (if0 e e e)) (if0 e e e)])
   
-  [])
   
   
