@@ -1,8 +1,6 @@
-I am a CS phd student at Northeastern University. My focus is programming languages. My background is three years of core cs undergrad courses and some grad courses at Iowa State and University of Hawaii, and two plmws, two oplsses, for external learning experience. No research experience.
+In this repository, I am modeling PCF (programmable computable functions, Plotkin 1977) with **list** and **def**. 
 
-In this repository, I am modeling PCF (programmable computable functions, Plotkin 1977) with **list** and **def**. Since we modeled PCF at *redex summer school*, I jumped right into writing down the syntax. To add types to my PCF language, I read redex manual (https://docs.racket-lang.org/redex/tutorial.html). It seemed going well, but my model turned out to be quite buggy.
-
-Here are the list of subtle (or non-subtle, if you are more experience language designer) problems my naive language had:
+Here are the list of subtle (or non-subtle) problems my redex model had which I want to remember:
 
 1. **binding-forms** clause must come last in your syntax.
 
