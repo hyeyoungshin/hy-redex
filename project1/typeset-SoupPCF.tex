@@ -138,7 +138,7 @@
 \title{Amal's SoupPCF}
 \author{Hyeyoung Shin\\
   \url{shin.hy@husky.neu.edu}}
-\date{31 Jan 2018}
+\date{2 Feb 2018}
 
 
 \begin{document}  %% <<== Here's where the document actually begins!
@@ -147,31 +147,64 @@
 
 \section{Syntax}
 
-\begin{align*}
-t &::= \text{unit} \mid \text{int} \mid t_1 \rightarrow t_2 \mid \text{LS}\\
-e &::= () \mid n \mid \text{if0 } e_1 e_2 e_3 \mid e_1 \text{ p } e_2 \mid x \mid \text{lam } x:t.e \mid e_1 e_2 \mid \text{nil} \mid \text{cons-l } e_1 e_2 \mid \text{cons-s } e \mid \\
-&\text{case } e \text{ of } nil \Rightarrow e_1 ; \text{cons-l } x \text{ } rx \Rightarrow e_2; \text{cons-s } x \Rightarrow e_3\\
-p &::= + \mid -\\
-\Gamma &::= . \mid \Gamma, x:t
-\end{align*}
+$\begin{array}{l c l}
+  t    & ::= & unit \mid int \mid t \rightarrow t \mid LS\\[1em]
+  e    & ::= & () \mid n \mid if0~e_1~e_2~e_3 \mid e_1~p~e_2 \mid x \mid lam~x:t.e \mid e_1~e_2 \mid nil \mid consl~e_1~e_2 \mid conss~e\\[1em]
+       &     &  \mid case~e~of~nil \Rightarrow e_1; consl~x~rx \Rightarrow e_2; conss~x \Rightarrow e_3\\[1em]
+  p    & ::= & + \mid -\\[1em]
+  \Gamma & ::= & . \mid \Gamma,x:t\\[2em]
+\end{array}$
 
 
 \section{Typing Judgement}
 
 \begin{itemize}
 \item[] 
+\begin{mathpar}
+  \infer[\mathsf{\text{T-UNIT}}]{\Gamma \vdash () : unit}{}
+  \and
+  \infer[\mathsf{\text{T-INT}}]{\Gamma \vdash n : int}{}
+  \and
+  \infer[\mathsf{\text{T-VAR}}]{\Gamma \vdash x : T}{ 
+ x : T \in \Gamma} 
+\end{mathpar}
+
+\item[] 
 \begin{equation*}
-  \infer[\mathsf{\text{ T-NIL }}]{\Gamma \vdash \text{nil} : \text{LS}}{
-  }
+  \infer[\mathsf{\text{T-IF0}}]{\Gamma \vdash if0~e_1~e_2~e_3 : T}{ 
+ \Gamma \vdash e_1 : int & \Gamma \vdash e_2 : T & \Gamma \vdash e_3 : T}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-APP}}]{\Gamma \vdash e_1~e_2 : T_2}{ 
+ \Gamma \vdash e_1 : T_1 \rightarrow T_2 & \Gamma \vdash e_2 : T_1}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-ABS}}]{\Gamma \vdash lam~x:T_1.e : T_2}{ 
+ \Gamma, x:T_1 \vdash e_2 : T_2}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-P}}]{\Gamma \vdash e_1~p~e_2 : int}{ 
+ \Gamma \vdash e_1 : int & \Gamma \vdash e_2 : int}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+ \infer[\mathsf{\text{T-NIL}}]{\Gamma \vdash nil : LS}{}
 \end{equation*}
 
 \item[]
 \begin{mathpar}  
-  \infer[\mathsf{\text{ T-CONS-L }}]{\Gamma \vdash \text{ cons-l } e_1 e_2 : \text{LS}}{
-    \Gamma \vdash e_1 : \text{int} & \Gamma \vdash e_2 : \text{ LS }}
+  \infer[\mathsf{\text{T-CONSL}}]{\Gamma \vdash consl~e_1~e_2 : LS}{
+    \Gamma \vdash e_1 : \text{int} & \Gamma \vdash e_2 : LS}
   \and
-  \infer[\mathsf{\text{ T-CONS-S }}]{\Gamma \vdash \text{ cons-s } e : \text{LS}}{
-    \Gamma \vdash e : \text{unit}}
+  \infer[\mathsf{\text{T-CONSS}}]{\Gamma \vdash conss~e : \text{LS}}{
+    \Gamma \vdash e : unit \rightarrow LS}
 \end{mathpar}
 
 \item[]
@@ -182,17 +215,15 @@ p &::= + \mid -\\
 \end{itemize}
 
 
-
-\section{CBV Operational Semantics}
-\begin{align*}
-v &::= () \mid n \mid \text{ lam } x:t.e \mid \text{ nil } \mid \text{ cons-l } v_1 \text{ } v_2 \mid \text{ cons-s } v\\
-E &::= [.] \mid \text{if0 } E \text{ } e_2 \text{ } e_3 \mid E \text{ } p \text{ } e_2 \mid v_1 \text{ } p \text{ } E \mid E \text{ } e_2 \mid v_1 \text{ } E \mid \text{ cons-l E} e_2 \mid \text{ cons-l } v \text{ } E \mid \text{ cons-s E} \mid \\
-&\text{ case } E \text{ of nil} \Rightarrow e_1; \text{ cons-l } x \text{ } rx \Rightarrow e_2; \text{ cons-s } x \Rightarrow e_3
-\end{align*}
-
-
-
 %% \newpage
+\section{CBV Operational Semantics}
+
+$\begin{array}{l c l}
+  v    & ::= & () \mid n \mid lam~x:t.e \mid nil \mid consl~v_1~v_2 \mid conss~v\\[1em]
+  E    & ::= & [.] \mid if0~E~e_2~e_3 \mid E~p~e_2 \mid v_1~p~E \mid E~e_2 \mid v_1~E \mid consl~E~e_2 \mid consl~v~E \mid conss~E \mid\\[1em] 
+       &     &  \mid case~E~of~nil \Rightarrow e_1; consl~x~rx \Rightarrow e_2; conss~x \Rightarrow e_3\\[1em]
+\end{array}$
+
 
 
  
