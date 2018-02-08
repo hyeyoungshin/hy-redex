@@ -1,0 +1,335 @@
+% Type Soundness of Amal's SoupPCF
+% Author: Hyeyoung Shin
+% Date: 7 Feb 2018
+% Updated: 7 Feb 2018
+% Copyright: William DeMeo 2014
+
+\documentclass{article}
+%% If you want bigger font, replace the line above with
+%%     \documentclass[12pt]{article}  
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Basic packages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{amsmath,amsthm,amssymb,mathtools}
+\usepackage{etoolbox}
+\usepackage{mathpartir}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{url}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Acronyms -- add your own if you want!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[acronym, shortcuts]{glossaries}
+\newacronym{HoTT}{HoTT}{homotopy type theory}
+\newacronym{IPL}{IPL}{intuitionistic propositional logic}
+\newacronym{TT}{TT}{intuitionistic type theory}
+\newacronym{LEM}{LEM}{law of the excluded middle}
+\newacronym{ITT}{ITT}{intensional type theory}
+\newacronym{ETT}{ETT}{extensional type theory}
+\newacronym{NNO}{NNO}{natural numbers object}
+\robustify{\ac}
+%% Use acronyms like this: \ac{IPL}
+%% If the acronym has already been used, then \ac{IPL} just prints IPL; 
+%% However, if it's the first occurrence, then we'll get:
+%%   intuitionistic propositional logic (IPL)
+
+
+\newrobustcmd*{\vocab}[1]{\emph{#1}}
+\newrobustcmd*{\latin}[1]{\textit{#1}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% `comment` is a package that enables you to omit sections by simply
+% enclosing the unwanted stuff inside `\begin{comment}  \end{comment}`
+\usepackage{comment}  % This package lets you omit sections of code
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% `hyperref` is a package that gives you hyperlinks in your pdf,
+% which can be very helpful for those reading it on a computer
+% or tablet.  You get the default color options for links with
+%
+%          \usepackage{hyperref}
+%
+% but I think the default colors are VERY ugly and distracting,
+% so I use the following options:
+\usepackage[
+  colorlinks=true,
+  urlcolor=black,
+  linkcolor=black,
+  citecolor=black
+]{hyperref}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% The `geometry.sty` package is for customizing page layout
+%
+\usepackage[  
+  top    = 3cm,  %% <<== adjust top margin by changing this number
+  left   = 4cm,  %% <<== adjust left margin by changing this number
+  bottom = 3cm,  %% <<==  ...etc...
+  right  = 4cm
+]{geometry}
+
+
+%% The next line incorporates some macros employed by Bob's students.
+\usepackage{cmu-macros}  %% see the `cmu-macros.sty` file for details.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% The `proof-dashed.sty` package is for typesetting inference rules
+%
+\usepackage{proof-dashed}
+%
+% Look at the comments in the file `proof-dashed.sty` for more details
+% about how to use it, but looking at this one example may be sufficient.
+% (Notice you start with the base of the tree and work up.)
+%
+% Example: The LaTeX commands
+%
+%		\infer[R2]{ E }
+%                     { A & \infer[R1]{ D }
+%                                   { B & C } }
+%
+%                produce following derivation tree
+%
+%                       B C
+%                      ----- R1
+%                  A     D
+%                 ---------- R2
+%                     E
+%
+% Note: spacing doesn't matter, so you could write the above derivation
+% like this:  \infer[R2]{E}{A & \infer[R1]{D}{B & C}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% `tikz` is a package for making diagrams
+% `tikz-cd` has additional support for commutative diagrams
+%  We don't need it for this document, but if you will add diagrams,
+%  be sure you have the `tikz-cd.sty` file in latex search path,
+%  and then uncomment the next line.
+%% \usepackage{tikz-cd}  
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% `fancy` is a package for making ``fancy'' headers and footers.
+%
+% If you want fancy headers and footers, then uncomment the next three lines.
+%
+%%   \pagestyle{fancy}
+%%   \lhead{Democrat}   \chead{Moderate}   \rhead{Republican}
+%%   \lfoot{}  \cfoot{\thepage}   \rfoot{}
+%    \renewcommand{\headrulewidth}{0.4pt}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%=============================================================================%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{Amal's SoupPCF}
+\author{Hyeyoung Shin\\
+  \url{shin.hy@husky.neu.edu}}
+\date{7 Feb 2018}
+
+
+\begin{document}  %% <<== Here's where the document actually begins!
+
+\maketitle
+
+\section{Syntax}
+
+$\begin{array}{l c l}
+  t    & ::= & unit \mid int \mid t \rightarrow t \mid LS\\[1em]
+  e    & ::= & () \mid n \mid if0~e_1~e_2~e_3 \mid e_1~p~e_2 \mid x \mid lam~x:t.e \mid e_1~e_2 \mid nil \mid consl~e_1~e_2 \mid conss~e\\[1em]
+       &     &  \mid case~e~of~nil \Rightarrow e_1; consl~x~rx \Rightarrow e_2; conss~x \Rightarrow e_3\\[1em]
+  p    & ::= & + \mid -\\[1em]
+  \Gamma & ::= & . \mid \Gamma,x:t\\[2em]
+\end{array}$
+
+
+\section{Typing Judgement}
+
+\begin{itemize}
+\item[] 
+\begin{mathpar}
+  \infer[\mathsf{\text{T-UNIT}}]{\Gamma \vdash () : unit}{}
+  \and
+  \infer[\mathsf{\text{T-INT}}]{\Gamma \vdash n : int}{}
+  \and
+  \infer[\mathsf{\text{T-VAR}}]{\Gamma \vdash x : T}{ 
+ x : T \in \Gamma} 
+\end{mathpar}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-IF0}}]{\Gamma \vdash if0~e_1~e_2~e_3 : T}{ 
+ \Gamma \vdash e_1 : int & \Gamma \vdash e_2 : T & \Gamma \vdash e_3 : T}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-APP}}]{\Gamma \vdash e_1~e_2 : T_2}{ 
+ \Gamma \vdash e_1 : T_1 \rightarrow T_2 & \Gamma \vdash e_2 : T_1}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-ABS}}]{\Gamma \vdash lam~x:T_1.e : T_2}{ 
+ \Gamma, x:T_1 \vdash e_2 : T_2}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-P}}]{\Gamma \vdash e_1~p~e_2 : int}{ 
+ \Gamma \vdash e_1 : int & \Gamma \vdash e_2 : int}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+ \infer[\mathsf{\text{T-NIL}}]{\Gamma \vdash nil : LS}{}
+\end{equation*}
+
+\item[]
+\begin{mathpar}  
+  \infer[\mathsf{\text{T-CONSL}}]{\Gamma \vdash consl~e_1~e_2 : LS}{
+    \Gamma \vdash e_1 : \text{int} & \Gamma \vdash e_2 : LS}
+  \and
+  \infer[\mathsf{\text{T-CONSS}}]{\Gamma \vdash conss~e : \text{LS}}{
+    \Gamma \vdash e : unit \rightarrow LS}
+\end{mathpar}
+
+\item[]
+\begin{equation*}
+  \infer[\mathsf{\text{ T-CASE }}]{\Gamma \vdash \text{ case } e \text{ of nil } \Rightarrow e_1; \text{ cons-l } x \text{ } rx \Rightarrow e_2; \text{ cons-s } x \Rightarrow e_3 : t}{
+    \Gamma \vdash e : \text{ LS } & \Gamma \vdash e_1 : t & \Gamma, x:\text{ int}, \text{ }rx:\text{ LS } \vdash e_2 : t & \Gamma, x:\text{ unit } \rightarrow \text{ LS } \vdash e_3 : t}
+\end{equation*}
+\end{itemize}
+
+
+%% \newpage
+\section{CBV Operational Semantics}
+
+$\begin{array}{l c l}
+  v    & ::= & () \mid n \mid lam~x:t.e \mid nil \mid consl~v_1~v_2 \mid conss~v\\[1em]
+  E    & ::= & [.] \mid if0~E~e_2~e_3 \mid E~p~e_2 \mid v_1~p~E \mid E~e_2 \mid v_1~E \mid consl~E~e_2 \mid consl~v~E \mid conss~E \mid\\[1em] 
+       &     &  \mid case~E~of~nil \Rightarrow e_1; consl~x~rx \Rightarrow e_2; conss~x \Rightarrow e_3\\[1em]
+\end{array}$
+
+\section{LEMMA [INVERSION]}
+
+\begin{enumerate}
+  \item If $\Gamma \vdash () : R$, then $R = uni$.
+  \item If $\Gamma \vdash n : R$, then $R = int$.
+  \item If $\Gamma \vdash e_1~p~e_2 : R$, then $R = int$ and $\Gamma \vdash e_1 : int$ and $\Gamma \vdash e_2 : int$.
+  \item If $\Gamma \vdash x : R$, then $x : R \in \Gamma$.
+  \item If $\Gamma \vdash \lambda x : T_1, e : R$, then $R = T_1 \rightarrow T_2$ for some $T_2$ with $\Gamma, x : T_1 \vdash e : T_2$.
+  \item If $\Gamma \vdash e_1e_2 : R$, then $\exists~T_1$ such that $\Gamma \vdash e_1 : T_1 \rightarrow R$ and $\Gamma \vdash e_2 : T_1$.
+  \item If $\Gamma \vdash nil : R$, then $R = LS$.
+  \item If $\Gamma \vdash consl~e_1~e_2 : R$, then $R = LS$ and $\Gamma \vdash e_1 : int$ and $\Gamma \vdash e : LS$.
+  \item If $\Gamma \vdash conss~e : R$, then $R = LS$ and $\Gamma \vdash e : unit \rightarrow LS$.
+  \item If $\Gamma \vdash case~e~of~nil \Rightarrow e_1; consl~x~rx \Rightarrow e_2; conss~x \Rightarrow e_3 : R$, then $\Gamma \vdash e : LS$.\\ Besides, $\Gamma \vdash e_1 : R$, $\Gamma, x : int, rx : LS \vdash e_2: R$, and $\Gamma, x : unit \rightarrow LS \vdash e_3 : R$.
+  \item If $\Gamma \vdash if0~e_1~e_2~e_3 : R$, then $\Gamma \vdash e_1 : Bool$, $\Gamma \vdash e_2 : R$, and $\Gamma \vdash e_3 : R$.
+\end{enumerate}
+
+\begin{proof}
+  Immediate from the typing relations.
+\end{proof}
+
+
+\section{THEOREM [UNIQUENESS OF TYPES]}
+In a given typing context, $\Gamma$, a term $e$ (with all free variables in $\Gamma$) has at most one type.
+
+\begin{proof} (structural induction on term $e$)
+  \begin{itemize}
+  \item Case $e = ()$:\\
+    $e$ has the unique unit type by INVERSION 1.
+    
+  \end{itemize}
+\end{proof}
+
+  
+
+\begin{itemize}
+\item[] 
+\begin{mathpar}
+  \infer[\mathsf{\text{T-UNIT}}]{\Gamma \vdash () : unit}{}
+  \and
+  \infer[\mathsf{\text{T-INT}}]{\Gamma \vdash n : int}{}
+  \and
+  \infer[\mathsf{\text{T-VAR}}]{\Gamma \vdash x : T}{ 
+ x : T \in \Gamma} 
+\end{mathpar}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-IF0}}]{\Gamma \vdash if0~e_1~e_2~e_3 : T}{ 
+ \Gamma \vdash e_1 : int & \Gamma \vdash e_2 : T & \Gamma \vdash e_3 : T}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-APP}}]{\Gamma \vdash e_1~e_2 : T_2}{ 
+ \Gamma \vdash e_1 : T_1 \rightarrow T_2 & \Gamma \vdash e_2 : T_1}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-ABS}}]{\Gamma \vdash lam~x:T_1.e : T_2}{ 
+ \Gamma, x:T_1 \vdash e_2 : T_2}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+  \infer[\mathsf{\text{T-P}}]{\Gamma \vdash e_1~p~e_2 : int}{ 
+ \Gamma \vdash e_1 : int & \Gamma \vdash e_2 : int}
+\end{equation*}
+
+\item[] 
+\begin{equation*}
+ \infer[\mathsf{\text{T-NIL}}]{\Gamma \vdash nil : LS}{}
+\end{equation*}
+
+\item[]
+\begin{mathpar}  
+  \infer[\mathsf{\text{T-CONSL}}]{\Gamma \vdash consl~e_1~e_2 : LS}{
+    \Gamma \vdash e_1 : \text{int} & \Gamma \vdash e_2 : LS}
+  \and
+  \infer[\mathsf{\text{T-CONSS}}]{\Gamma \vdash conss~e : \text{LS}}{
+    \Gamma \vdash e : unit \rightarrow LS}
+\end{mathpar}
+
+\item[]
+\begin{equation*}
+  \infer[\mathsf{\text{ T-CASE }}]{\Gamma \vdash \text{ case } e \text{ of nil } \Rightarrow e_1; \text{ cons-l } x \text{ } rx \Rightarrow e_2; \text{ cons-s } x \Rightarrow e_3 : t}{
+    \Gamma \vdash e : \text{ LS } & \Gamma \vdash e_1 : t & \Gamma, x:\text{ int}, \text{ }rx:\text{ LS } \vdash e_2 : t & \Gamma, x:\text{ unit } \rightarrow \text{ LS } \vdash e_3 : t}
+\end{equation*}
+\end{itemize}
+
+
+%% \newpage
+\section{CBV Operational Semantics}
+
+$\begin{array}{l c l}
+  v    & ::= & () \mid n \mid lam~x:t.e \mid nil \mid consl~v_1~v_2 \mid conss~v\\[1em]
+  E    & ::= & [.] \mid if0~E~e_2~e_3 \mid E~p~e_2 \mid v_1~p~E \mid E~e_2 \mid v_1~E \mid consl~E~e_2 \mid consl~v~E \mid conss~E \mid\\[1em] 
+       &     &  \mid case~E~of~nil \Rightarrow e_1; consl~x~rx \Rightarrow e_2; conss~x \Rightarrow e_3\\[1em]
+\end{array}$
+
+
+
+ 
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%=============================================================================%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
